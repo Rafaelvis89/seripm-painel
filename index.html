@@ -28,21 +28,21 @@
     </div>
 
     <script>
-        // Use a URL oficial do seu GAS
         let GAS_API_URL = "https://script.google.com/macros/s/AKfycbzIfkPMsIzjqU3-qcavlDzR2qrDS_uY2uASMp1LL5v8nRFaxk-0q_mZ7XHOwgANHIZ0/exec";
         
-        // Função de envio corrigida para contornar o erro CORS
         async function sendApiRequest(payload) {
+            // Converte o objeto para formato de formulário (evita bloqueio CORS)
+            const formData = new URLSearchParams();
+            formData.append("payload", JSON.stringify(payload));
+
             try {
-                // A chave aqui é o envio como text/plain para evitar o OPTIONS (preflight)
                 const response = await fetch(GAS_API_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'text/plain;charset=utf-8'
+                        'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
-                
                 return await response.json();
             } catch (err) {
                 console.error("Erro na comunicação:", err);
@@ -61,14 +61,13 @@
                     localStorage.setItem('loggedUser', u);
                     location.reload();
                 } else {
-                    alert("Erro: " + res.error);
+                    alert("Erro: " + (res.error || "Falha na autenticação"));
                 }
             } catch (e) {
-                alert("Falha de conexão. Tente novamente.");
+                alert("Falha de conexão. Verifique sua internet.");
             }
         }
 
-        // Carrega o dashboard se houver sessão
         const sessionToken = localStorage.getItem('sessionToken');
         if (sessionToken) {
             document.getElementById('login-screen').classList.add('hidden');
