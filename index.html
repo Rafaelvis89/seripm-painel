@@ -3,89 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel SERIPM</title>
+    <title>Painel Administrativo SERIPM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style> 
-        /* Esconde barra de rolagem mas mantém função */
+    <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        tr.expanded-row { background-color: #f8fafc; }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800">
+<body class="bg-slate-100 font-sans text-slate-800 antialiased">
 
     <script>
-        // COLOQUE AQUI SUA URL NOVA GERADA NO DEPLOY
+        // CONFIGURAÇÃO DA CHAVE DO PORTAL - ATUALIZE COM SEU ENDEREÇO DE DEPLOY /EXEC
         const API_URL = "https://script.google.com/macros/s/AKfycbypRWWMMAI8QC_jWHHAw-B1xklBIY9deSazulRC_rkZM3u65RiHMpQl6yG0xAXm8hQx/exec"; 
     </script>
 
-    <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-100%] opacity-0 bg-white shadow-xl rounded-xl p-4 flex items-center gap-3 border-l-4">
-        <div id="toast-icon"></div><p id="toast-msg" class="text-sm font-bold"></p>
+    <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-120%] opacity-0 bg-white shadow-2xl rounded-2xl p-4 flex items-center gap-3 border-l-4">
+        <div id="toast-icon"></div><p id="toast-msg" class="text-xs font-black uppercase tracking-wider"></p>
     </div>
 
-    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-slate-100">
-            <div class="text-center mb-8">
-                <i class="fa-solid fa-shield-halved text-4xl text-blue-600 mb-2"></i>
-                <h1 class="text-2xl font-black text-slate-800">SERIPM</h1>
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-800">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
+            <div class="text-center mb-6">
+                <div class="inline-flex bg-blue-50 text-blue-600 p-4 rounded-full mb-3 shadow-inner">
+                    <i class="fa-solid fa-folder-closed text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-black text-slate-900 tracking-tight">SERIPM MARICÁ</h1>
+                <p class="text-[10px] text-slate-400 font-black tracking-widest uppercase mt-1">Plataforma Operacional</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
-                <input type="text" id="login-user" placeholder="Usuário" required class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none">
-                <input type="password" id="login-pass" placeholder="Senha" required class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none">
-                <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-blue-700">Entrar</button>
+                <input type="text" id="login-user" placeholder="Matrícula / Operador" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold uppercase tracking-wide bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="login-pass" placeholder="Código de Segurança" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg hover:bg-blue-700 transition duration-200">Autenticar Entrada</button>
             </form>
         </div>
     </div>
 
     <div id="dashboard" class="hidden min-h-screen flex flex-col">
-        <header class="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center print:hidden">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-layer-group text-blue-600 text-xl"></i>
-                <h1 class="text-lg font-black">Central de Protocolos</h1>
+        <header class="bg-white shadow-sm border-b border-slate-200 px-6 py-4 flex justify-between items-center print:hidden">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-headset text-blue-600 text-lg"></i>
+                <h1 class="text-base font-black tracking-tight text-slate-900">SERIPM <span class="text-xs font-normal text-slate-400">v3.2</span></h1>
             </div>
             <div class="flex items-center gap-4">
                 <div class="text-right">
-                    <p id="user-name" class="text-sm font-bold text-slate-800"></p>
-                    <p id="user-role" class="text-xs text-slate-500 font-bold uppercase"></p>
+                    <p id="user-name" class="text-xs font-black text-slate-800 uppercase"></p>
+                    <p id="user-role" class="text-[9px] text-blue-600 font-black tracking-wider uppercase"></p>
                 </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-power-off text-xl"></i></button>
+                <button onclick="logout()" class="text-slate-300 hover:text-red-500 transition"><i class="fa-solid fa-power-off text-base"></i></button>
             </div>
         </header>
 
-        <main class="flex-1 p-4 max-w-[1600px] mx-auto w-full">
-            <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 border-b border-slate-200 print:hidden" id="tab-menu">
-                <button onclick="changeTab('ENTRADA')" id="tab-ENTRADA" class="tab-btn px-5 py-2.5 bg-blue-600 text-white rounded-t-xl font-bold text-sm transition">Entrada</button>
-                <button onclick="changeTab('GARANTIA')" id="tab-GARANTIA" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Garantia</button>
-                <button onclick="changeTab('ADMINISTRATIVO')" id="tab-ADMINISTRATIVO" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Administrativo</button>
-                <button onclick="changeTab('TELECOM')" id="tab-TELECOM" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Telecom</button>
-                <button onclick="changeTab('URGENTE/ATRASADOS')" id="tab-URGENTE" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Urgentes</button>
-            </div>
+        <main class="flex-1 p-4 lg:p-6 max-w-[1700px] mx-auto w-full">
+            <div class="flex gap-1 overflow-x-auto no-scrollbar mb-4 border-b border-slate-200 print:hidden" id="tab-menu">
+                </div>
 
-            <div class="flex flex-col md:flex-row justify-between gap-4 mb-4 print:hidden">
-                <input type="text" id="search-input" onkeyup="filterTable()" placeholder="Buscar solicitante, protocolo, bairro..." class="w-full md:w-1/3 border rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-600">
-                <div class="flex gap-2">
-                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold"><i class="fa-solid fa-print mr-2"></i>Imprimir</button>
-                    <button onclick="openModal('modal-novo')" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md"><i class="fa-solid fa-plus mr-2"></i>Novo Protocolo</button>
+            <div id="control-bar" class="flex flex-col md:flex-row justify-between gap-3 mb-4 print:hidden">
+                <div class="flex gap-2 w-full md:w-1/2">
+                    <div class="relative w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="Filtrar por Solicitante, Protocolo, Bairro ou Endereço..." class="w-full border border-slate-200 bg-white rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none shadow-sm focus:ring-2 focus:ring-blue-600">
+                    </div>
+                </div>
+                <div class="flex gap-2 justify-end" id="action-buttons-zone">
+                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700 shadow-sm"><i class="fa-solid fa-print mr-1.5"></i>Imprimir Seleção</button>
+                    <button onclick="openModal('modal-novo')" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 shadow-md"><i class="fa-solid fa-plus mr-1.5"></i>Novo Chamado</button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" id="main-data-card">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left whitespace-nowrap text-sm border-collapse">
+                    <table class="w-full text-left text-xs border-collapse" id="protocol-table">
                         <thead>
-                            <tr class="bg-slate-100 border-b text-[10px] uppercase text-slate-600 font-black tracking-wide">
-                                <th class="p-3">Data / Hora</th>
-                                <th class="p-3">Protocolo</th>
-                                <th class="p-3">Atendente</th>
-                                <th class="p-3">Solicitante</th>
-                                <th class="p-3">Contato (Tel/CPF)</th>
-                                <th class="p-3">Endereço / Bairro</th>
-                                <th class="p-3">Solicitação / Detalhes</th>
-                                <th class="p-3">Obs</th>
-                                <th class="p-3 text-center">Status / Ação</th>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                                <th class="p-3.5 w-12 text-center print:hidden">Visualizar</th>
+                                <th class="p-3.5">Data / Hora</th>
+                                <th class="p-3.5">Protocolo</th>
+                                <th class="p-3.5">Atendente</th>
+                                <th class="p-3.5">Solicitante</th>
+                                <th class="p-3.5">Bairro</th>
+                                <th class="p-3.5 text-center">Status Interno</th>
+                                <th class="p-3.5 text-center print:hidden">Gerenciamento</th>
                             </tr>
                         </thead>
-                        <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="table-body" class="divide-y divide-slate-100 font-medium text-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="user-management-card" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-base font-black text-slate-900 uppercase">Controle de Operadores do Sistema</h2>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Criar, Editar Nível e Ativar/Desativar Credenciais</p>
+                    </div>
+                    <button onclick="openUserModal()" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm"><i class="fa-solid fa-user-plus mr-1.5"></i>Cadastrar Operador</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                                <th class="p-3">Operador / Matrícula</th>
+                                <th class="p-3">Código de Segurança</th>
+                                <th class="p-3">Nível de Acesso</th>
+                                <th class="p-3 text-center">Estado da Conta</th>
+                                <th class="p-3 text-center">Ações de Ajuste</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body" class="divide-y divide-slate-100 font-bold text-slate-700">
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -93,72 +121,109 @@
     </div>
 
     <div id="modal-novo" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
-        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl">
-            <div class="p-4 border-b flex justify-between bg-slate-50 rounded-t-2xl">
-                <h3 class="font-black text-slate-800 uppercase text-sm"><i class="fa-solid fa-plus text-blue-600 mr-2"></i>Cadastrar Protocolo</h3>
-                <button onclick="closeModal('modal-novo')" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+        <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden">
+            <div class="p-4 border-b flex justify-between bg-slate-50 items-center">
+                <h3 class="font-black text-slate-800 uppercase text-xs tracking-wider"><i class="fa-solid fa-square-plus text-blue-600 mr-2 text-sm"></i>Formulário de Abertura de Protocolo</h3>
+                <button onclick="closeModal('modal-novo')" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-sm"></i></button>
             </div>
-            <form onsubmit="submitProtocolo(event)" class="p-5 space-y-3">
+            <form onsubmit="submitProtocolo(event)" class="p-6 space-y-4">
                 <div class="grid grid-cols-3 gap-3">
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Solicitante</label>
-                        <input type="text" id="np-solicitante" required class="w-full border rounded-lg p-2 text-xs uppercase">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Nome do Solicitante</label>
+                        <input type="text" id="np-solicitante" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">CPF</label>
-                        <input type="text" id="np-cpf" class="w-full border rounded-lg p-2 text-xs">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">CPF do Solicitante</label>
+                        <input type="text" id="np-cpf" placeholder="Apenas números" class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Endereço do Problema</label>
-                        <input type="text" id="np-endereco" required class="w-full border rounded-lg p-2 text-xs uppercase">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Endereço do Problema (Rua, Número)</label>
+                        <input type="text" id="np-endereco" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Telefone</label>
-                        <input type="text" id="np-telefone" required class="w-full border rounded-lg p-2 text-xs">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Telefone de Contato</label>
+                        <input type="text" id="np-telefone" required class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Bairro</label>
-                        <input type="text" id="np-bairro" required class="w-full border rounded-lg p-2 text-xs uppercase">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Bairro Mandatório</label>
+                        <input type="text" id="np-bairro" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Ponto de Referência</label>
-                        <input type="text" id="np-ref" class="w-full border rounded-lg p-2 text-xs uppercase">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Ponto de Referência Próximo</label>
+                        <input type="text" id="np-ref" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Solicitação (Serviço)</label>
-                        <select id="np-solicitacao" required class="w-full border rounded-lg p-2 text-xs uppercase bg-white">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Tipo de Solicitação</label>
+                        <select id="np-solicitacao" required class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="" disabled selected>Selecione...</option>
                             <option value="TROCA DE LÂMPADA">Troca de Lâmpada</option>
-                            <option value="BRAÇO QUEBRADO">Braço Quebrado</option>
                             <option value="CURTO CIRCUITO">Curto Circuito</option>
-                            <option value="LUMINÁRIA PISCANDO">Luminária Piscando</option>
-                            <option value="OUTROS">Outros...</option>
+                            <option value="BRAÇO DE LUMINÁRIA QUEBRADO">Braço de Luminária Quebrado</option>
+                            <option value="POSTE DANIFICADO">Poste Danificado</option>
+                            <option value="MANUTENÇÃO DE REDE">Manutenção de Rede</option>
+                            <option value="OUTROS ATENDIMENTOS">Outros Atendimentos</option>
                         </select>
                     </div>
-
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Detalhes do Serviço</label>
-                        <input type="text" id="np-detalhes" class="w-full border rounded-lg p-2 text-xs uppercase">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Detalhes Adicionais do Serviço</label>
+                        <input type="text" id="np-detalhes" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="col-span-3">
+                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Observações Internas Iniciais</label>
+                        <input type="text" id="np-obs" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
-                <div class="pt-3 flex justify-end gap-2 border-t mt-2">
-                    <button type="button" onclick="closeModal('modal-novo')" class="px-4 py-2 border rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" id="btn-save-np" class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow">Salvar</button>
+                <div class="pt-3 flex justify-end gap-2 border-t mt-4">
+                    <button type="button" onclick="closeModal('modal-novo')" class="px-4 py-2 border rounded-xl text-xs font-bold shadow-sm">Cancelar</button>
+                    <button type="submit" id="btn-save-np" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md hover:bg-blue-700">Registrar na Base</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-usuario" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl">
+            <div class="p-4 border-b bg-slate-50 flex justify-between items-center rounded-t-3xl">
+                <h3 class="font-black text-slate-800 uppercase text-xs tracking-wide" id="user-modal-title">Operador</h3>
+                <button onclick="closeModal('modal-usuario')" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="submitUser(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Identificação / Login</label>
+                    <input type="text" id="mu-username" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Código de Acesso (Senha)</label>
+                    <input type="text" id="mu-password" required class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Perfil de Permissão</label>
+                    <select id="mu-role" required class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="ATENDENTE">ATENDENTE</option>
+                        <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
+                        <option value="SUPERVISOR">SUPERVISOR</option>
+                    </select>
+                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t">
+                    <button type="button" onclick="closeModal('modal-usuario')" class="px-4 py-2 border rounded-xl text-xs font-bold">Voltar</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl shadow-md">Salvar Configurações</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        let currentUser = null, currentRole = null, currentTab = "ENTRADA", protocolsData = [];
+        let currentUser = null, currentRole = null, currentTab = "ENTRADA", protocolsData = [], openRows = {};
+
+        // MAPA COMPLETO DE ALINHAMENTO COM AS ABAS DO PLANILHA FÍSICA
+        const ALL_TABS = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "SUPERVISOR", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA", "USUÁRIOS"];
 
         function showToast(msg, type) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').textContent = msg;
-            document.getElementById('toast-icon').innerHTML = type === 'success' ? '<i class="fa-solid fa-check text-green-500"></i>' : '<i class="fa-solid fa-xmark text-red-500"></i>';
-            toast.className = `fixed top-5 right-5 z-50 transform transition-all duration-300 bg-white shadow-xl rounded-xl p-4 flex items-center gap-3 border-l-4 ${type === 'success' ? 'border-green-500' : 'border-red-500'}`;
-            setTimeout(() => toast.classList.add('translate-y-[-100%]', 'opacity-0'), 3000);
+            document.getElementById('toast-icon').innerHTML = type === 'success' ? '<i class="fa-solid fa-circle-check text-green-500"></i>' : '<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
+            toast.className = `fixed top-5 right-5 z-50 transform transition-all duration-300 bg-white shadow-2xl rounded-2xl p-4 flex items-center gap-3 border-l-4 ${type === 'success' ? 'border-green-500' : 'border-red-500'}`;
+            setTimeout(() => toast.classList.add('translate-y-[-120%]', 'opacity-0'), 3000);
         }
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -172,69 +237,125 @@
                     body: JSON.stringify(payload)
                 });
                 return await response.json();
-            } catch (error) { return { success: false, error: "Falha de conexão." }; }
+            } catch (error) { return { success: false, error: "Erro crítico de rede ou gateway incorreto." }; }
         }
 
+        // --- SISTEMA DE LOGIN E ROTEAMENTO BASEADO NO PERFIL ---
         async function handleLogin(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-login'); btn.textContent = "Aguarde..."; btn.disabled = true;
-            const res = await fetchAPI({ action: "login", username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value });
+            const btn = document.getElementById('btn-login'); btn.textContent = "Validando Entrada..."; btn.disabled = true;
+            const userVal = document.getElementById('login-user').value;
+            const passVal = document.getElementById('login-pass').value;
+
+            const res = await fetchAPI({ action: "login", username: userVal, password: passVal });
             if (res.success) {
                 currentUser = res.username; currentRole = res.role;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
                 document.getElementById('user-name').textContent = currentUser;
-                document.getElementById('user-role').textContent = currentRole;
-                loadProtocols(); showToast("Logado com sucesso!", "success");
+                document.getElementById('user-role').textContent = "NÍVEL: " + currentRole;
+                
+                // Inicialização Condicional das Abas por Perfil
+                buildTabMenu();
+                showToast("Acesso autorizado!", "success");
             } else { showToast(res.error, "error"); }
-            btn.textContent = "Entrar"; btn.disabled = false;
+            btn.textContent = "Autenticar Entrada"; btn.disabled = false;
         }
 
         function logout() { location.reload(); }
 
-        function changeTab(tabName) {
-            currentTab = tabName;
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'text-white');
-                btn.classList.add('bg-slate-200', 'text-slate-600');
+        // GERADOR DINÂMICO DE ABAS POR ACESSO (RBAC)
+        function buildTabMenu() {
+            const container = document.getElementById('tab-menu');
+            container.innerHTML = "";
+            openRows = {};
+
+            let allowedTabs = [];
+            if (currentRole === "ATENDENTE") {
+                allowedTabs = ["ENTRADA"];
+            } else if (currentRole === "ADMINISTRATIVO") {
+                allowedTabs = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA"];
+            } else if (currentRole === "SUPERVISOR") {
+                allowedTabs = ALL_TABS;
+            }
+
+            currentTab = allowedTabs[0];
+
+            allowedTabs.forEach(tab => {
+                let btn = document.createElement("button");
+                btn.id = `btn-tab-${allowedTabs.indexOf(tab)}`;
+                btn.className = `tab-btn px-4 py-2 text-xs font-black uppercase rounded-t-xl transition duration-150 whitespace-nowrap ${tab === currentTab ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
+                btn.textContent = tab;
+                btn.onclick = () => switchTab(tab, btn.id);
+                container.appendChild(btn);
             });
-            const activeBtn = document.getElementById(tabName === 'URGENTE/ATRASADOS' ? 'tab-URGENTE' : `tab-${tabName}`);
-            activeBtn.classList.remove('bg-slate-200', 'text-slate-600');
-            activeBtn.classList.add('bg-blue-600', 'text-white');
-            loadProtocols();
+
+            executeLoad();
         }
 
+        function switchTab(tabName, btnId) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white');
+                b.classList.add('bg-slate-200', 'text-slate-500');
+            });
+            document.getElementById(btnId).classList.remove('bg-slate-200', 'text-slate-500');
+            document.getElementById(btnId).classList.add('bg-blue-600', 'text-white');
+            
+            executeLoad();
+        }
+
+        function executeLoad() {
+            if (currentTab === "USUÁRIOS") {
+                document.getElementById('main-data-card').classList.add('hidden');
+                document.getElementById('control-bar').classList.add('hidden');
+                document.getElementById('user-management-card').classList.remove('hidden');
+                loadUsers();
+            } else {
+                document.getElementById('user-management-card').classList.add('hidden');
+                document.getElementById('main-data-card').classList.remove('hidden');
+                document.getElementById('control-bar').classList.remove('hidden');
+                loadProtocols();
+            }
+        }
+
+        // --- SISTEMA INTERNO DE PROTOCOLOS COM LINHAS EXPANSÍVEIS (ACORDEÃO) ---
         async function loadProtocols() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-xl"></i> Sincronizando com a planilha online...</td></tr>`;
             const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole, tab: currentTab });
-            if (res.success) { protocolsData = res.data; renderTable(protocolsData); } 
-            else { tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-red-500">Erro ao carregar dados.</td></tr>`; }
+            if (res.success) { protocolsData = res.data; renderTable(protocolsData); }
+            else { tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-red-500 font-bold">Falha crítica de comunicação.</td></tr>`; }
         }
 
         function renderTable(data) {
             const tbody = document.getElementById('table-body');
-            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-slate-400">Nenhum dado na aba ${currentTab}.</td></tr>`; return; }
+            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center p-6 text-slate-400 font-bold">Nenhum protocolo registrado na aba ${currentTab}.</td></tr>`; return; }
 
             let html = "";
-            data.forEach(p => {
+            data.forEach((p, index) => {
                 let badge = "bg-slate-100 text-slate-600";
                 if (p.status === "ABERTO") badge = "bg-amber-100 text-amber-700";
                 if (p.status === "GARANTIA") badge = "bg-rose-100 text-rose-700";
                 if (p.status === "RESOLVIDO") badge = "bg-emerald-100 text-emerald-700";
 
+                let isExpanded = openRows[p.protocolo] ? "" : "hidden";
+                let iconArrow = openRows[p.protocolo] ? "fa-eye-slash text-red-500" : "fa-eye text-blue-600";
+
+                // Linha Principal Resumida
                 html += `
-                    <tr class="hover:bg-slate-50 border-b border-slate-100">
-                        <td class="p-3 text-xs font-bold text-slate-500">${p.dataHora}</td>
-                        <td class="p-3 font-black text-blue-600">${p.protocolo}</td>
-                        <td class="p-3 text-xs font-bold text-slate-600">${p.atendente}</td>
-                        <td class="p-3 text-xs font-bold text-slate-800 uppercase">${p.solicitante}</td>
-                        <td class="p-3 text-[10px] text-slate-500"><i class="fa-solid fa-phone mr-1"></i>${p.telefone || '-'}<br>CPF: ${p.cpf || '-'}</td>
-                        <td class="p-3 text-xs text-slate-600 uppercase"><b>${p.bairro}</b><br><span class="text-[10px]">${p.endereco}</span></td>
-                        <td class="p-3 text-xs text-slate-600 uppercase"><b>${p.solicitacao}</b><br><span class="text-[10px]">${p.detalhes}</span></td>
-                        <td class="p-3 text-[10px] text-slate-500 max-w-[150px] truncate" title="${p.obs}">${p.obs || '-'}</td>
+                    <tr class="hover:bg-slate-50 transition duration-150">
                         <td class="p-3 text-center print:hidden">
-                            <select onchange="changeStatus('${p.protocolo}', this.value)" class="text-[10px] font-black uppercase rounded p-1.5 outline-none cursor-pointer w-full text-center ${badge}">
+                            <button onclick="toggleRow('${p.protocolo}')" class="p-1 focus:outline-none text-sm transition"><i class="fa-solid ${iconArrow}"></i></button>
+                        </td>
+                        <td class="p-3 font-semibold text-slate-500">${p.dataHora}</td>
+                        <td class="p-3 font-black text-slate-900 tracking-wide">${p.protocolo}</td>
+                        <td class="p-3 font-bold text-slate-600">${p.atendente}</td>
+                        <td class="p-3 font-black text-slate-700 uppercase">${p.solicitante}</td>
+                        <td class="p-3 font-black text-slate-700 uppercase">${p.bairro}</td>
+                        <td class="p-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase border tracking-wider ${badge}">${p.status}</span></td>
+                        <td class="p-3 text-center print:hidden">
+                            <select onchange="changeStatus('${p.protocolo}', this.value)" class="text-[10px] font-black uppercase rounded-lg border p-1 bg-white outline-none cursor-pointer text-slate-600">
                                 <option value="${p.status}" selected disabled>${p.status}</option>
                                 <option value="ABERTO">ABERTO</option>
                                 <option value="GARANTIA">GARANTIA</option>
@@ -243,45 +364,143 @@
                             </select>
                         </td>
                     </tr>
+                    
+                    <tr id="details-${p.protocolo}" class="${isExpanded} expanded-row">
+                        <td colspan="8" class="p-4 bg-slate-50 border-l-4 border-blue-600">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold">
+                                <div class="bg-white p-3 rounded-xl border">
+                                    <p class="text-[9px] uppercase text-slate-400 font-black mb-1"><i class="fa-solid fa-map-pin mr-1"></i>Localização Completa</p>
+                                    <p class="text-slate-700 uppercase"><b>Rua:</b> ${p.endereco}</p>
+                                    <p class="text-slate-700 uppercase mt-1"><b>Referência:</b> ${p.referencia || 'NÃO INFORMADA'}</p>
+                                </div>
+                                <div class="bg-white p-3 rounded-xl border">
+                                    <p class="text-[9px] uppercase text-slate-400 font-black mb-1"><i class="fa-solid fa-id-card mr-1"></i>Documentos e Contato</p>
+                                    <p class="text-slate-700"><b>Telefone:</b> ${p.telefone || 'NÃO PREENCHIDO'}</p>
+                                    <p class="text-slate-700 mt-1"><b>CPF:</b> ${p.cpf || 'NÃO INFORMADO'}</p>
+                                </div>
+                                <div class="bg-white p-3 rounded-xl border">
+                                    <p class="text-[9px] uppercase text-slate-400 font-black mb-1"><i class="fa-solid fa-clipboard-list mr-1"></i>Serviço e Observações</p>
+                                    <p class="text-slate-700 uppercase"><b>Solicitação:</b> ${p.solicitacao}</p>
+                                    <p class="text-slate-600 uppercase mt-1 font-normal"><b>Detalhes:</b> ${p.detalhes || 'SEM DETALHES EXTRA'}</p>
+                                    <p class="text-blue-700 uppercase mt-1.5 pt-1.5 border-t text-[11px]"><b>OBSERVAÇÃO:</b> ${p.obs || '-'}</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                 `;
             });
             tbody.innerHTML = html;
         }
 
+        function toggleRow(proto) {
+            openRows[proto] = !openRows[proto];
+            renderTable(protocolsData);
+        }
+
         function filterTable() {
-            const termo = document.getElementById('search-input').value.toLowerCase();
+            const val = document.getElementById('search-input').value.toLowerCase();
             renderTable(protocolsData.filter(p => 
-                (p.protocolo||'').toLowerCase().includes(termo) || (p.solicitante||'').toLowerCase().includes(termo) ||
-                (p.bairro||'').toLowerCase().includes(termo) || (p.endereco||'').toLowerCase().includes(termo)
+                (p.protocolo||'').toLowerCase().includes(val) || (p.solicitante||'').toLowerCase().includes(val) ||
+                (p.bairro||'').toLowerCase().includes(val) || (p.endereco||'').toLowerCase().includes(val)
             ));
         }
 
         async function submitProtocolo(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-save-np'); btn.textContent = "Salvando..."; btn.disabled = true;
-            const res = await fetchAPI({
+            const btn = document.getElementById('btn-save-np'); btn.textContent = "Processando Gravação..."; btn.disabled = true;
+            const payload = {
                 action: "createProtocol", username: currentUser,
                 data: {
                     solicitante: document.getElementById('np-solicitante').value, cpf: document.getElementById('np-cpf').value,
                     telefone: document.getElementById('np-telefone').value, endereco: document.getElementById('np-endereco').value,
                     bairro: document.getElementById('np-bairro').value, referencia: document.getElementById('np-ref').value,
-                    solicitacao: document.getElementById('np-solicitacao').value, detalhes: document.getElementById('np-detalhes').value
+                    solicitacao: document.getElementById('np-solicitacao').value, detalhes: document.getElementById('np-detalhes').value,
+                    obs: document.getElementById('np-obs').value
                 }
-            });
+            };
+            const res = await fetchAPI(payload);
             if (res.success) {
-                showToast("Protocolo " + res.protocolo + " salvo!", "success");
+                showToast("Protocolo de Atendimento Gerado: " + res.protocolo, "success");
                 closeModal('modal-novo'); document.querySelector('#modal-novo form').reset();
-                if(currentTab === "ENTRADA") loadProtocols(); 
-            } else { showToast("Erro ao salvar.", "error"); }
-            btn.textContent = "Salvar"; btn.disabled = false;
+                if (currentTab === "ENTRADA") loadProtocols();
+            } else { showToast("Falha interna de gravação.", "error"); }
+            btn.textContent = "Registrar na Base"; btn.disabled = false;
         }
 
         async function changeStatus(id, novoStatus) {
-            if(!confirm(`Mudar status do protocolo ${id} para ${novoStatus}?`)) return loadProtocols();
-            showToast("Movendo...", "success");
-            const res = await fetchAPI({ action: "updateStatus", protocolId: id, newStatus: novoStatus, tab: currentTab });
-            if(res.success) loadProtocols();
-            else showToast("Erro ao alterar.", "error");
+            if (!confirm(`Confirmar alteração do protocolo ${id} para ${novoStatus}?`)) return loadProtocols();
+            showToast("Tramitando...", "success");
+            const res = await fetchAPI({ action: "updateStatus", username: currentUser, protocolId: id, newStatus: novoStatus, tab: currentTab });
+            if (res.success) { showToast("Movimentação concluída!", "success"); loadProtocols(); }
+            else { showToast("Erro operacional na mudança.", "error"); }
+        }
+
+        // =========================================================================
+        // MÓDULO EXCLUSIVO JAVASCRIPT: CRUD USUÁRIOS (GERENCIAMENTO DE OPERADORES)
+        // =========================================================================
+        async function loadUsers() {
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> Baixando quadro de operadores...</td></tr>`;
+            const res = await fetchAPI({ action: "getUsers", username: currentUser, role: currentRole });
+            if (res.success) {
+                let html = "";
+                res.data.forEach(u => {
+                    let btnStatusText = u.status === "ATIVO" ? "Desativar" : "Ativar";
+                    let btnColor = u.status === "ATIVO" ? "bg-red-50 text-red-600 border-red-200" : "bg-green-50 text-green-600 border-green-200";
+                    let labelColor = u.status === "ATIVO" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600";
+
+                    html += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="p-3 text-slate-900 uppercase">${u.username}</td>
+                            <td class="p-3 font-mono text-slate-500">${u.password}</td>
+                            <td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px]">${u.role}</span></td>
+                            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-[9px] uppercase border ${labelColor}">${u.status}</span></td>
+                            <td class="p-3 text-center flex justify-center gap-1.5">
+                                <button onclick="editUser('${u.username}', '${u.password}', '${u.role}')" class="px-2.5 py-1 border bg-slate-50 rounded-lg hover:bg-slate-100 text-slate-600"><i class="fa-solid fa-user-gear"></i></button>
+                                <button onclick="toggleUser('${u.username}')" class="px-2.5 py-1 border rounded-lg text-[10px] uppercase font-black tracking-wide transition ${btnColor}">${btnStatusText}</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } else { tbody.innerHTML = `<tr><td colspan="5" class="text-center p-3 text-red-500">Erro de leitura.</td></tr>`; }
+        }
+
+        function openUserModal() {
+            document.getElementById('user-modal-title').textContent = "Cadastrar Novo Operador";
+            document.getElementById('mu-username').value = ""; document.getElementById('mu-username').disabled = false;
+            document.getElementById('mu-password').value = "";
+            openModal('modal-usuario');
+        }
+
+        function editUser(user, pass, role) {
+            document.getElementById('user-modal-title').textContent = "Alterar Credenciais do Operador";
+            document.getElementById('mu-username').value = user; document.getElementById('mu-username').disabled = true;
+            document.getElementById('mu-password').value = pass;
+            document.getElementById('mu-role').value = role;
+            openModal('modal-usuario');
+        }
+
+        async function submitUser(e) {
+            e.preventDefault();
+            const payload = {
+                action: "saveUser", username: currentUser, role: currentRole,
+                userData: {
+                    username: document.getElementById('mu-username').value,
+                    password: document.getElementById('mu-password').value,
+                    role: document.getElementById('mu-role').value
+                }
+            };
+            const res = await fetchAPI(payload);
+            if (res.success) { showToast(res.message, "success"); closeModal('modal-usuario'); loadUsers(); }
+            else { showToast(res.error, "error"); }
+        }
+
+        async function toggleUser(targetName) {
+            if (!confirm(`Deseja alterar o estado de ativação da conta de ${targetName}?`)) return;
+            const res = await fetchAPI({ action: "toggleUser", username: currentUser, role: currentRole, targetUser: targetName });
+            if (res.success) { showToast("Estado da credencial modificado para: " + res.nextStatus, "success"); loadUsers(); }
+            else { showToast(res.error, "error"); }
         }
     </script>
 </body>
