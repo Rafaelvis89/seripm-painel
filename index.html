@@ -6,16 +6,21 @@
     <title>Painel SERIPM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style> 
+        /* Esconde barra de rolagem mas mantém função */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800">
 
     <script>
+        // COLOQUE AQUI SUA URL NOVA GERADA NO DEPLOY
         const API_URL = "https://script.google.com/macros/s/AKfycbypRWWMMAI8QC_jWHHAw-B1xklBIY9deSazulRC_rkZM3u65RiHMpQl6yG0xAXm8hQx/exec"; 
     </script>
 
     <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-100%] opacity-0 bg-white shadow-xl rounded-xl p-4 flex items-center gap-3 border-l-4">
-        <div id="toast-icon"></div>
-        <p id="toast-msg" class="text-sm font-bold"></p>
+        <div id="toast-icon"></div><p id="toast-msg" class="text-sm font-bold"></p>
     </div>
 
     <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
@@ -23,18 +28,11 @@
             <div class="text-center mb-8">
                 <i class="fa-solid fa-shield-halved text-4xl text-blue-600 mb-2"></i>
                 <h1 class="text-2xl font-black text-slate-800">SERIPM</h1>
-                <p class="text-xs text-slate-500 font-bold tracking-widest uppercase">Acesso Restrito</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Usuário</label>
-                    <input type="text" id="login-user" required class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha</label>
-                    <input type="password" id="login-pass" required class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none">
-                </div>
-                <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-blue-700 transition">Entrar</button>
+                <input type="text" id="login-user" placeholder="Usuário" required class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none">
+                <input type="password" id="login-pass" placeholder="Senha" required class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none">
+                <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-blue-700">Entrar</button>
             </form>
         </div>
     </div>
@@ -46,40 +44,48 @@
                 <h1 class="text-lg font-black">Central de Protocolos</h1>
             </div>
             <div class="flex items-center gap-4">
-                <div class="text-right hidden sm:block">
+                <div class="text-right">
                     <p id="user-name" class="text-sm font-bold text-slate-800"></p>
                     <p id="user-role" class="text-xs text-slate-500 font-bold uppercase"></p>
                 </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
+                <button onclick="logout()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-power-off text-xl"></i></button>
             </div>
         </header>
 
-        <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
-            <div class="flex flex-col md:flex-row justify-between gap-4 mb-6 print:hidden">
-                <div class="flex gap-2 w-full md:w-1/2">
-                    <input type="text" id="search-input" onkeyup="filterTable()" placeholder="Buscar bairro, rua, nome ou protocolo..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-600 outline-none shadow-sm">
-                </div>
+        <main class="flex-1 p-4 max-w-[1600px] mx-auto w-full">
+            <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 border-b border-slate-200 print:hidden" id="tab-menu">
+                <button onclick="changeTab('ENTRADA')" id="tab-ENTRADA" class="tab-btn px-5 py-2.5 bg-blue-600 text-white rounded-t-xl font-bold text-sm transition">Entrada</button>
+                <button onclick="changeTab('GARANTIA')" id="tab-GARANTIA" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Garantia</button>
+                <button onclick="changeTab('ADMINISTRATIVO')" id="tab-ADMINISTRATIVO" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Administrativo</button>
+                <button onclick="changeTab('TELECOM')" id="tab-TELECOM" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Telecom</button>
+                <button onclick="changeTab('URGENTE/ATRASADOS')" id="tab-URGENTE" class="tab-btn px-5 py-2.5 bg-slate-200 text-slate-600 rounded-t-xl font-bold text-sm transition hover:bg-slate-300">Urgentes</button>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-between gap-4 mb-4 print:hidden">
+                <input type="text" id="search-input" onkeyup="filterTable()" placeholder="Buscar solicitante, protocolo, bairro..." class="w-full md:w-1/3 border rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-600">
                 <div class="flex gap-2">
-                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-3 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-700"><i class="fa-solid fa-print mr-2"></i>Imprimir</button>
-                    <button onclick="openModal('modal-novo')" class="bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700"><i class="fa-solid fa-plus mr-2"></i>Novo Protocolo</button>
+                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold"><i class="fa-solid fa-print mr-2"></i>Imprimir</button>
+                    <button onclick="openModal('modal-novo')" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md"><i class="fa-solid fa-plus mr-2"></i>Novo Protocolo</button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" id="print-area">
+            <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm">
+                    <table class="w-full text-left whitespace-nowrap text-sm border-collapse">
                         <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
-                                <th class="p-4">Protocolo / Data</th>
-                                <th class="p-4">Cliente</th>
-                                <th class="p-4">Endereço</th>
-                                <th class="p-4">Serviço</th>
-                                <th class="p-4 text-center">Status</th>
-                                <th class="p-4 text-center print:hidden">Ações</th>
+                            <tr class="bg-slate-100 border-b text-[10px] uppercase text-slate-600 font-black tracking-wide">
+                                <th class="p-3">Data / Hora</th>
+                                <th class="p-3">Protocolo</th>
+                                <th class="p-3">Atendente</th>
+                                <th class="p-3">Solicitante</th>
+                                <th class="p-3">Contato (Tel/CPF)</th>
+                                <th class="p-3">Endereço / Bairro</th>
+                                <th class="p-3">Solicitação / Detalhes</th>
+                                <th class="p-3">Obs</th>
+                                <th class="p-3 text-center">Status / Ação</th>
                             </tr>
                         </thead>
-                        <tbody id="table-body" class="divide-y divide-slate-100">
-                            </tbody>
+                        <tbody id="table-body" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
@@ -87,52 +93,66 @@
     </div>
 
     <div id="modal-novo" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
-        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden">
-            <div class="p-5 border-b flex justify-between items-center bg-slate-50">
-                <h3 class="font-black text-slate-800 uppercase tracking-wide text-sm"><i class="fa-solid fa-file-circle-plus text-blue-600 mr-2"></i>Criar Protocolo</h3>
-                <button onclick="closeModal('modal-novo')" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl">
+            <div class="p-4 border-b flex justify-between bg-slate-50 rounded-t-2xl">
+                <h3 class="font-black text-slate-800 uppercase text-sm"><i class="fa-solid fa-plus text-blue-600 mr-2"></i>Cadastrar Protocolo</h3>
+                <button onclick="closeModal('modal-novo')" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form onsubmit="submitProtocolo(event)" class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
+            <form onsubmit="submitProtocolo(event)" class="p-5 space-y-3">
+                <div class="grid grid-cols-3 gap-3">
                     <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Nome do Cliente</label>
-                        <input type="text" id="np-cliente" required class="w-full border rounded-xl p-2 text-sm uppercase">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Solicitante</label>
+                        <input type="text" id="np-solicitante" required class="w-full border rounded-lg p-2 text-xs uppercase">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-700 uppercase">CPF</label>
-                        <input type="text" id="np-cpf" class="w-full border rounded-xl p-2 text-sm">
+                        <input type="text" id="np-cpf" class="w-full border rounded-lg p-2 text-xs">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Endereço do Problema</label>
+                        <input type="text" id="np-endereco" required class="w-full border rounded-lg p-2 text-xs uppercase">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-700 uppercase">Telefone</label>
-                        <input type="text" id="np-telefone" class="w-full border rounded-xl p-2 text-sm">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Endereço (Rua, Nº)</label>
-                        <input type="text" id="np-endereco" required class="w-full border rounded-xl p-2 text-sm uppercase">
+                        <input type="text" id="np-telefone" required class="w-full border rounded-lg p-2 text-xs">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-700 uppercase">Bairro</label>
-                        <input type="text" id="np-bairro" required class="w-full border rounded-xl p-2 text-sm uppercase">
+                        <input type="text" id="np-bairro" required class="w-full border rounded-lg p-2 text-xs uppercase">
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Ponto de Referência</label>
+                        <input type="text" id="np-ref" class="w-full border rounded-lg p-2 text-xs uppercase">
+                    </div>
+                    
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Tipo de Serviço</label>
-                        <input type="text" id="np-servico" class="w-full border rounded-xl p-2 text-sm uppercase">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Solicitação (Serviço)</label>
+                        <select id="np-solicitacao" required class="w-full border rounded-lg p-2 text-xs uppercase bg-white">
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="TROCA DE LÂMPADA">Troca de Lâmpada</option>
+                            <option value="BRAÇO QUEBRADO">Braço Quebrado</option>
+                            <option value="CURTO CIRCUITO">Curto Circuito</option>
+                            <option value="LUMINÁRIA PISCANDO">Luminária Piscando</option>
+                            <option value="OUTROS">Outros...</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Detalhes do Serviço</label>
+                        <input type="text" id="np-detalhes" class="w-full border rounded-lg p-2 text-xs uppercase">
                     </div>
                 </div>
-                <div class="pt-4 flex justify-end gap-3 border-t mt-4">
+                <div class="pt-3 flex justify-end gap-2 border-t mt-2">
                     <button type="button" onclick="closeModal('modal-novo')" class="px-4 py-2 border rounded-xl text-xs font-bold">Cancelar</button>
-                    <button type="submit" id="btn-save-np" class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md">Salvar Protocolo</button>
+                    <button type="submit" id="btn-save-np" class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        let currentUser = null;
-        let currentRole = null;
-        let protocolsData = [];
+        let currentUser = null, currentRole = null, currentTab = "ENTRADA", protocolsData = [];
 
-        // 1. UTILITÁRIOS E UI
         function showToast(msg, type) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').textContent = msg;
@@ -144,172 +164,124 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // 2. FUNÇÃO CORE DE REQUISIÇÃO (COM BYPASS DE CORS)
         async function fetchAPI(payload) {
             try {
                 const response = await fetch(API_URL, {
-                    method: 'POST',
-                    redirect: 'follow', // OBRIGATÓRIO PARA NÃO DAR ERRO DE CORS NO APPS SCRIPT
+                    method: 'POST', redirect: 'follow',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
                 return await response.json();
-            } catch (error) {
-                console.error(error);
-                showToast("Erro de conexão com o servidor.", "error");
-                return { success: false };
-            }
+            } catch (error) { return { success: false, error: "Falha de conexão." }; }
         }
 
-        // 3. LOGIN E SESSÃO
         async function handleLogin(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-login');
-            btn.textContent = "Autenticando..."; btn.disabled = true;
-
-            const user = document.getElementById('login-user').value;
-            const pass = document.getElementById('login-pass').value;
-
-            const res = await fetchAPI({ action: "login", username: user, password: pass });
-            
+            const btn = document.getElementById('btn-login'); btn.textContent = "Aguarde..."; btn.disabled = true;
+            const res = await fetchAPI({ action: "login", username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value });
             if (res.success) {
                 currentUser = res.username; currentRole = res.role;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
                 document.getElementById('user-name').textContent = currentUser;
                 document.getElementById('user-role').textContent = currentRole;
-                loadProtocols();
-                showToast("Bem-vindo!", "success");
-            } else {
-                showToast(res.error, "error");
-            }
+                loadProtocols(); showToast("Logado com sucesso!", "success");
+            } else { showToast(res.error, "error"); }
             btn.textContent = "Entrar"; btn.disabled = false;
         }
 
-        function logout() {
-            currentUser = null; currentRole = null;
-            document.getElementById('dashboard').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('login-pass').value = '';
+        function logout() { location.reload(); }
+
+        function changeTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-slate-200', 'text-slate-600');
+            });
+            const activeBtn = document.getElementById(tabName === 'URGENTE/ATRASADOS' ? 'tab-URGENTE' : `tab-${tabName}`);
+            activeBtn.classList.remove('bg-slate-200', 'text-slate-600');
+            activeBtn.classList.add('bg-blue-600', 'text-white');
+            loadProtocols();
         }
 
-        // 4. CARREGAR E RENDERIZAR TABELA
         async function loadProtocols() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl"></i> Carregando...</td></tr>`;
-            
-            const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole });
-            
-            if (res && res.success) {
-                protocolsData = res.data;
-                renderTable(protocolsData);
-            } else {
-                // Se der erro, tira o loading e mostra o motivo!
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Erro ao carregar os dados. Verifique o URL ou as permissões do Apps Script.</td></tr>`;
-                showToast("Falha na comunicação com a planilha.", "error");
-            }
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></td></tr>`;
+            const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole, tab: currentTab });
+            if (res.success) { protocolsData = res.data; renderTable(protocolsData); } 
+            else { tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-red-500">Erro ao carregar dados.</td></tr>`; }
         }
 
         function renderTable(data) {
             const tbody = document.getElementById('table-body');
-            
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 font-bold text-slate-400">Nenhum protocolo encontrado.</td></tr>`;
-                return;
-            }
+            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-slate-400">Nenhum dado na aba ${currentTab}.</td></tr>`; return; }
 
-            // 1. Criamos uma variável de texto vazia para não forçar o visual
-            let linhasHTML = "";
-
-            // 2. Montamos todo o código apenas na memória
+            let html = "";
             data.forEach(p => {
-                let badgeColor = "bg-slate-100 text-slate-600";
-                if (p.status === "ABERTO") badgeColor = "bg-amber-100 text-amber-700";
-                if (p.status === "GARANTIA") badgeColor = "bg-rose-100 text-rose-700";
-                if (p.status === "RESOLVIDO" || p.status === "CONCLUÍDO") badgeColor = "bg-emerald-100 text-emerald-700";
+                let badge = "bg-slate-100 text-slate-600";
+                if (p.status === "ABERTO") badge = "bg-amber-100 text-amber-700";
+                if (p.status === "GARANTIA") badge = "bg-rose-100 text-rose-700";
+                if (p.status === "RESOLVIDO") badge = "bg-emerald-100 text-emerald-700";
 
-                linhasHTML += `
-                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                        <td class="p-4">
-                            <p class="font-black text-slate-800">${p.protocolo}</p>
-                            <p class="text-[10px] text-slate-500 font-bold">${p.data}</p>
-                        </td>
-                        <td class="p-4 font-bold text-slate-700">${p.cliente || 'N/A'}<br><span class="text-[10px] text-slate-400 font-normal"><i class="fa-solid fa-phone mr-1"></i>${p.telefone || 'Sem telefone'}</span></td>
-                        <td class="p-4 text-xs font-bold text-slate-600">${p.endereco || 'N/A'}<br><span class="text-slate-400">${p.bairro || ''}</span></td>
-                        <td class="p-4 text-xs font-bold text-slate-600">${p.servico || 'N/A'}</td>
-                        <td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${badgeColor}">${p.status || 'ABERTO'}</span></td>
-                        <td class="p-4 text-center print:hidden">
-                            <select onchange="changeStatus('${p.protocolo}', this.value)" class="text-xs border rounded-lg p-1 bg-white font-bold text-slate-600 cursor-pointer outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="" disabled selected>Alterar...</option>
-                                <option value="ABERTO">Aberto</option>
-                                <option value="GARANTIA">Garantia</option>
-                                <option value="TELECOM">Telecom</option>
-                                <option value="RESOLVIDO">Resolvido</option>
+                html += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="p-3 text-xs font-bold text-slate-500">${p.dataHora}</td>
+                        <td class="p-3 font-black text-blue-600">${p.protocolo}</td>
+                        <td class="p-3 text-xs font-bold text-slate-600">${p.atendente}</td>
+                        <td class="p-3 text-xs font-bold text-slate-800 uppercase">${p.solicitante}</td>
+                        <td class="p-3 text-[10px] text-slate-500"><i class="fa-solid fa-phone mr-1"></i>${p.telefone || '-'}<br>CPF: ${p.cpf || '-'}</td>
+                        <td class="p-3 text-xs text-slate-600 uppercase"><b>${p.bairro}</b><br><span class="text-[10px]">${p.endereco}</span></td>
+                        <td class="p-3 text-xs text-slate-600 uppercase"><b>${p.solicitacao}</b><br><span class="text-[10px]">${p.detalhes}</span></td>
+                        <td class="p-3 text-[10px] text-slate-500 max-w-[150px] truncate" title="${p.obs}">${p.obs || '-'}</td>
+                        <td class="p-3 text-center print:hidden">
+                            <select onchange="changeStatus('${p.protocolo}', this.value)" class="text-[10px] font-black uppercase rounded p-1.5 outline-none cursor-pointer w-full text-center ${badge}">
+                                <option value="${p.status}" selected disabled>${p.status}</option>
+                                <option value="ABERTO">ABERTO</option>
+                                <option value="GARANTIA">GARANTIA</option>
+                                <option value="TELECOM">TELECOM</option>
+                                <option value="RESOLVIDO">RESOLVIDO</option>
                             </select>
                         </td>
                     </tr>
                 `;
             });
-            
-            // 3. Injetamos tudo de uma única vez na tela (não trava o navegador!)
-            tbody.innerHTML = linhasHTML;
+            tbody.innerHTML = html;
         }
-        // 5. FILTRAGEM LOCAL (Rápida, sem ir ao servidor)
+
         function filterTable() {
             const termo = document.getElementById('search-input').value.toLowerCase();
-            const filtrados = protocolsData.filter(p => 
-                p.protocolo.toLowerCase().includes(termo) ||
-                p.cliente.toLowerCase().includes(termo) ||
-                p.bairro.toLowerCase().includes(termo) ||
-                p.endereco.toLowerCase().includes(termo)
-            );
-            renderTable(filtrados);
+            renderTable(protocolsData.filter(p => 
+                (p.protocolo||'').toLowerCase().includes(termo) || (p.solicitante||'').toLowerCase().includes(termo) ||
+                (p.bairro||'').toLowerCase().includes(termo) || (p.endereco||'').toLowerCase().includes(termo)
+            ));
         }
 
-        // 6. CRIAR NOVO PROTOCOLO
         async function submitProtocolo(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-save-np');
-            btn.textContent = "Salvando..."; btn.disabled = true;
-
-            const payload = {
-                action: "createProtocol",
-                username: currentUser,
+            const btn = document.getElementById('btn-save-np'); btn.textContent = "Salvando..."; btn.disabled = true;
+            const res = await fetchAPI({
+                action: "createProtocol", username: currentUser,
                 data: {
-                    cliente: document.getElementById('np-cliente').value,
-                    cpf: document.getElementById('np-cpf').value,
-                    telefone: document.getElementById('np-telefone').value,
-                    endereco: document.getElementById('np-endereco').value,
-                    bairro: document.getElementById('np-bairro').value,
-                    servico: document.getElementById('np-servico').value
+                    solicitante: document.getElementById('np-solicitante').value, cpf: document.getElementById('np-cpf').value,
+                    telefone: document.getElementById('np-telefone').value, endereco: document.getElementById('np-endereco').value,
+                    bairro: document.getElementById('np-bairro').value, referencia: document.getElementById('np-ref').value,
+                    solicitacao: document.getElementById('np-solicitacao').value, detalhes: document.getElementById('np-detalhes').value
                 }
-            };
-
-            const res = await fetchAPI(payload);
+            });
             if (res.success) {
-                showToast("Protocolo " + res.protocolo + " criado!", "success");
-                closeModal('modal-novo');
-                document.querySelector('#modal-novo form').reset();
-                loadProtocols(); // Recarrega a tabela para exibir o novo
-            } else {
-                showToast("Erro ao salvar.", "error");
-            }
-            btn.textContent = "Salvar Protocolo"; btn.disabled = false;
+                showToast("Protocolo " + res.protocolo + " salvo!", "success");
+                closeModal('modal-novo'); document.querySelector('#modal-novo form').reset();
+                if(currentTab === "ENTRADA") loadProtocols(); 
+            } else { showToast("Erro ao salvar.", "error"); }
+            btn.textContent = "Salvar"; btn.disabled = false;
         }
 
-        // 7. ALTERAR STATUS DO PROTOCOLO
-        async function changeStatus(protocolId, newStatus) {
-            if(!confirm(`Deseja alterar o protocolo ${protocolId} para ${newStatus}?`)) return loadProtocols();
-            
-            showToast("Atualizando...", "success");
-            const res = await fetchAPI({ action: "updateStatus", username: currentUser, protocolId: protocolId, newStatus: newStatus });
-            
-            if (res.success) {
-                showToast("Status atualizado com sucesso!", "success");
-                loadProtocols(); // Recarrega os dados atualizados
-            } else {
-                showToast("Erro ao atualizar.", "error");
-            }
+        async function changeStatus(id, novoStatus) {
+            if(!confirm(`Mudar status do protocolo ${id} para ${novoStatus}?`)) return loadProtocols();
+            showToast("Movendo...", "success");
+            const res = await fetchAPI({ action: "updateStatus", protocolId: id, newStatus: novoStatus, tab: currentTab });
+            if(res.success) loadProtocols();
+            else showToast("Erro ao alterar.", "error");
         }
     </script>
 </body>
