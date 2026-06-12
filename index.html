@@ -195,12 +195,18 @@
 
         // 4. CARREGAR E RENDERIZAR TABELA
         async function loadProtocols() {
-            document.getElementById('table-body').innerHTML = `<tr><td colspan="6" class="text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl"></i> Carregando...</td></tr>`;
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl"></i> Carregando...</td></tr>`;
+            
             const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole });
             
-            if (res.success) {
+            if (res && res.success) {
                 protocolsData = res.data;
                 renderTable(protocolsData);
+            } else {
+                // Se der erro, tira o loading e mostra o motivo!
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Erro ao carregar os dados. Verifique o URL ou as permissões do Apps Script.</td></tr>`;
+                showToast("Falha na comunicação com a planilha.", "error");
             }
         }
 
