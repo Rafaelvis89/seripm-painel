@@ -15,7 +15,7 @@
 <body class="bg-slate-100 font-sans text-slate-800 antialiased">
 
     <script>
-        // CONFIGURAÇÃO DA CHAVE DO PORTAL - ENDEREÇO DO SEU DEPLOY /EXEC
+        // CONFIGURAÇÃO DA CHAVE DO PORTAL - A SUA URL ESTÁ AQUI
         const API_URL = "https://script.google.com/macros/s/AKfycbypRWWMMAI8QC_jWHHAw-B1xklBIY9deSazulRC_rkZM3u65RiHMpQl6yG0xAXm8hQx/exec"; 
     </script>
 
@@ -221,13 +221,11 @@
         const ALL_TABS = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "SUPERVISOR", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA", "USUÁRIOS"];
         const STATS_TABS = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "SUPERVISOR", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA"];
 
-        // CONVERSOR E FORMATADOR SEGURO DE DATA/HORA BRASILEIRO
         function formatarDataHora(stringData) {
             if (!stringData) return "-";
             try {
                 let d = new Date(stringData);
                 if (isNaN(d.getTime())) {
-                    // Tenta limpar strings com formatos legados salvos na planilha física
                     let limpa = stringData.toString().split(".")[0];
                     return limpa;
                 }
@@ -304,7 +302,6 @@
                 container.appendChild(btn);
             });
 
-            // Construção dos Cards de Estatística (Um para cada aba)
             buildStatsDashboard(allowedTabs.filter(t => STATS_TABS.includes(t)));
             executeLoad();
         }
@@ -350,7 +347,6 @@
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-xl"></i> Sincronizando dados...</td></tr>`;
             
-            // Carrega a aba ativa
             const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole, tab: currentTab });
             if (res.success) { 
                 protocolsData = res.data; 
@@ -359,7 +355,6 @@
             } else { tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-red-500 font-bold">Erro de sincronização.</td></tr>`; }
         }
 
-        // ATUALIZADOR ASSÍNCRONO PARALELO DE CONTAGEM CARD POR CARD (SEM TRAVAR)
         async function updateDashboardCounters() {
             let tabsToFetch = [];
             if (currentRole === "ATENDENTE") tabsToFetch = ["ENTRADA"];
@@ -490,89 +485,15 @@
             renderTable(filtered);
         }
 
-        // PAGINAÇÃO INDEPENDENTE EXTERNA PARA EMISSÃO E IMPRESSÃO DE RELATÓRIO ESTATÍSTICO
+        // SALVA OS DADOS NA SESSÃO E ABRE A ABA DO RELATÓRIO
         function gerarRelatorioJanela() {
             if (protocolsData.length === 0) {
-                showToast("Não há dados na aba atual para gerar relatório.", "error");
+                showToast("Não há dados na aba atual para gerar o relatório.", "error");
                 return;
             }
-            // Armazena os dados atuais na memória do navegador para a página de relatório puxar
             sessionStorage.setItem('seripm_report_data', JSON.stringify(protocolsData));
             sessionStorage.setItem('seripm_report_tab', currentTab);
-            
-            // Abre o novo arquivo
             window.open('relatorio.html', '_blank');
-        }
-            });
-
-            let tRowsStatus = Object.entries(statusMap).map(([st, qtd]) => `
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; text-transform: uppercase;">${st}</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${qtd}</td>
-                </tr>
-            `).join('');
-
-            let tRowsBairros = Object.entries(bairrosMap).sort((a,b) => b[1] - a[1]).map(([b, qtd]) => `
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-transform: uppercase;">${b}</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1e3a8a;">${qtd} chamados</td>
-                </tr>
-            `).join('');
-
-            // Abertura de outra página limpa contendo apenas as estatísticas de impressão
-            let janelaRelatorio = window.open("", "_blank");
-            janelaRelatorio.document.write(`
-                <html>
-                <head>
-                    <title>Relatório Estatístico - SERIPM</title>
-                    <style>
-                        body { font-family: sans-serif; color: #334155; padding: 30px; font-size: 12px; }
-                        .header { text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 25px; }
-                        .title { font-size: 18px; font-weight: 900; text-transform: uppercase; margin: 0; color: #0f172a; }
-                        .subtitle { font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-top: 5px; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
-                        th { background-color: #f1f5f9; padding: 10px; border: 1px solid #cbd5e1; font-size: 10px; text-transform: uppercase; text-align: left; }
-                        h3 { text-transform: uppercase; font-size: 12px; font-weight: 800; border-left: 4px solid #2563eb; padding-left: 8px; color: #1e293b; }
-                        @media print { .no-print { display: none; } }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h2 class="title">Relatório Estatístico de Atendimentos</h2>
-                        <div class="subtitle">Aba Operacional Analisada: ${currentTab} | Gerado em: ${new Date().toLocaleString('pt-BR')}</div>
-                    </div>
-                    
-                    <h3>Volumetria de Status na Fila</h3>
-                    <table>
-                        <thead>
-                            <tr><th>Mapeamento de Status</th><th style="text-align: center; width: 150px;">Quantidade</th></tr>
-                        </thead>
-                        <tbody>
-                            ${tRowsStatus}
-                            <tr style="background-color: #f8fafc;">
-                                <td style="padding: 10px; border: 1px solid #cbd5e1; font-weight: 900; text-transform: uppercase;">Volume Total Acumulado</td>
-                                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: 900; color: #2563eb;">${protocolsData.length}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <h3>Distribuição Geográfica por Bairro</h3>
-                    <table>
-                        <thead>
-                            <tr><th>Bairro Atendido</th><th style="text-align: center; width: 200px;">Densidade de Chamados</th></tr>
-                        </thead>
-                        <tbody>
-                            ${tRowsBairros}
-                        </tbody>
-                    </table>
-
-                    <script>
-                        window.onload = function() { window.print(); }
-                    <\/script>
-                </body>
-                </html>
-            `);
-            janelaRelatorio.document.close();
         }
 
         async function submitProtocolo(e) {
