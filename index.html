@@ -6,6 +6,8 @@
     <title>Painel Administrativo SERIPM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -15,7 +17,7 @@
 <body class="bg-slate-100 font-sans text-slate-800 antialiased">
 
     <script>
-        // CONFIGURAÇÃO DA CHAVE DO PORTAL - A SUA URL ESTÁ AQUI
+        // COLOQUE SUA URL AQUI
         const API_URL = "https://script.google.com/macros/s/AKfycbypRWWMMAI8QC_jWHHAw-B1xklBIY9deSazulRC_rkZM3u65RiHMpQl6yG0xAXm8hQx/exec"; 
     </script>
 
@@ -26,70 +28,65 @@
     <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-800">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
             <div class="text-center mb-6">
-                <div class="inline-flex bg-blue-50 text-blue-600 p-4 rounded-full mb-3 shadow-inner">
-                    <i class="fa-solid fa-folder-closed text-3xl"></i>
-                </div>
+                <div class="inline-flex bg-blue-50 text-blue-600 p-4 rounded-full mb-3 shadow-inner"><i class="fa-solid fa-folder-closed text-3xl"></i></div>
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight">SERIPM MARICÁ</h1>
                 <p class="text-[10px] text-slate-400 font-black tracking-widest uppercase mt-1">Plataforma Operacional</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <input type="text" id="login-user" placeholder="Matrícula / Operador" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold uppercase tracking-wide bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                 <input type="password" id="login-pass" placeholder="Código de Segurança" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg hover:bg-blue-700 transition duration-200">Autenticar Entrada</button>
+                <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg hover:bg-blue-700 transition">Autenticar Entrada</button>
             </form>
         </div>
     </div>
 
     <div id="dashboard" class="hidden min-h-screen flex flex-col">
         <header class="bg-white shadow-sm border-b border-slate-200 px-6 py-4 flex justify-between items-center print:hidden">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-headset text-blue-600 text-lg"></i>
-                <h1 class="text-base font-black tracking-tight text-slate-900">SERIPM <span class="text-xs font-normal text-slate-400">v3.8</span></h1>
-            </div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-headset text-blue-600 text-lg"></i><h1 class="text-base font-black tracking-tight text-slate-900">SERIPM <span class="text-xs font-normal text-slate-400">v4.0</span></h1></div>
             <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <p id="user-name" class="text-xs font-black text-slate-800 uppercase"></p>
-                    <p id="user-role" class="text-[9px] text-blue-600 font-black tracking-wider uppercase"></p>
-                </div>
+                <div class="text-right"><p id="user-name" class="text-xs font-black text-slate-800 uppercase"></p><p id="user-role" class="text-[9px] text-blue-600 font-black tracking-wider uppercase"></p></div>
                 <button onclick="logout()" class="text-slate-300 hover:text-red-500 transition"><i class="fa-solid fa-power-off text-base"></i></button>
             </div>
         </header>
 
         <main class="flex-1 p-4 lg:p-6 max-w-[1700px] mx-auto w-full">
-            
             <div class="flex gap-1 overflow-x-auto no-scrollbar mb-4 border-b border-slate-200 print:hidden" id="tab-menu"></div>
 
-            <div id="stats-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6 print:hidden">
-                </div>
+            <div id="stats-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6 print:hidden">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200"><p class="text-[9px] uppercase font-black text-slate-400">Total na Aba</p><p id="stat-total" class="text-2xl font-black text-blue-600 mt-1">0</p></div>
+                <div class="bg-amber-50 p-4 rounded-2xl shadow-sm border border-amber-200"><p class="text-[9px] uppercase font-black text-amber-600">Abertos</p><p id="stat-abertos" class="text-2xl font-black text-amber-700 mt-1">0</p></div>
+                <div class="bg-rose-50 p-4 rounded-2xl shadow-sm border border-rose-200"><p class="text-[9px] uppercase font-black text-rose-600">Em Garantia</p><p id="stat-garantia" class="text-2xl font-black text-rose-700 mt-1">0</p></div>
+                <div class="bg-emerald-50 p-4 rounded-2xl shadow-sm border border-emerald-200"><p class="text-[9px] uppercase font-black text-emerald-600">Resolvidos</p><p id="stat-resolvidos" class="text-2xl font-black text-emerald-700 mt-1">0</p></div>
+                <div class="bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-200"><p class="text-[9px] uppercase font-black text-slate-500">Outros</p><p id="stat-outros" class="text-2xl font-black text-slate-700 mt-1">0</p></div>
+            </div>
 
             <div id="control-bar" class="flex flex-col md:flex-row justify-between gap-3 mb-4 print:hidden">
                 <div class="flex gap-2 w-full md:w-1/2">
                     <div class="relative w-full">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="Filtrar por Solicitante, Protocolo, Bairro ou Endereço..." class="w-full border border-slate-200 bg-white rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none shadow-sm focus:ring-2 focus:ring-blue-600">
+                        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="Filtrar nesta aba..." class="w-full border border-slate-200 bg-white rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none shadow-sm focus:ring-2 focus:ring-blue-600">
                     </div>
                 </div>
-                <div class="flex gap-2 justify-end items-center" id="action-buttons-zone">
-                    <span id="selected-count" class="text-xs font-bold text-slate-500 mr-2 hidden">0 selecionados</span>
+                <div class="flex gap-2 justify-end items-center">
+                    <button onclick="openModal('modal-exportacao')" class="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm"><i class="fa-solid fa-file-export mr-1.5"></i>Exportar Excel/PDF</button>
                     <button onclick="gerarRelatorioJanela()" class="bg-teal-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-teal-700 shadow-sm"><i class="fa-solid fa-chart-pie mr-1.5"></i>Relatório Geral</button>
-                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700 shadow-sm"><i class="fa-solid fa-print mr-1.5"></i>Imprimir Seleção</button>
+                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700 shadow-sm"><i class="fa-solid fa-print mr-1.5"></i>Imprimir Lista</button>
                     <button onclick="openModal('modal-novo')" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 shadow-md"><i class="fa-solid fa-plus mr-1.5"></i>Novo Chamado</button>
                 </div>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" id="main-data-card">
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto" id="tabela-impressao-container">
                     <table class="w-full text-left text-xs border-collapse" id="protocol-table">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                                <th class="p-3.5 w-10 text-center print:hidden"><input type="checkbox" id="chk-all" onchange="toggleSelectAll(this)" class="rounded border-slate-300"></th>
-                                <th class="p-3.5 w-12 text-center print:hidden">Visualizar</th>
+                                <th class="p-3.5 w-12 text-center print:hidden">Ver</th>
                                 <th class="p-3.5">Data / Hora</th>
                                 <th class="p-3.5">Protocolo</th>
                                 <th class="p-3.5">Atendente</th>
                                 <th class="p-3.5">Solicitante</th>
                                 <th class="p-3.5">Bairro</th>
-                                <th class="p-3.5 text-center">Status / Gerenciamento</th>
+                                <th class="p-3.5 text-center">Status / Ação</th>
                             </tr>
                         </thead>
                         <tbody id="table-body" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
@@ -99,23 +96,12 @@
 
             <div id="user-management-card" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 class="text-base font-black text-slate-900 uppercase">Controle de Operadores do Sistema</h2>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Criar, Editar Nível e Ativar/Desativar Credenciais</p>
-                    </div>
-                    <button onclick="openUserModal()" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm"><i class="fa-solid fa-user-plus mr-1.5"></i>Cadastrar Operador</button>
+                    <div><h2 class="text-base font-black text-slate-900 uppercase">Controle de Operadores</h2></div>
+                    <button onclick="openUserModal()" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-user-plus mr-1.5"></i>Cadastrar</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                                <th class="p-3">Operador / Matrícula</th>
-                                <th class="p-3">Código de Segurança</th>
-                                <th class="p-3">Nível de Acesso</th>
-                                <th class="p-3 text-center">Estado da Conta</th>
-                                <th class="p-3 text-center">Ações de Ajuste</th>
-                            </tr>
-                        </thead>
+                        <thead><tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase"><th class="p-3">Operador</th><th class="p-3">Senha</th><th class="p-3">Nível</th><th class="p-3 text-center">Abas Liberadas</th><th class="p-3 text-center">Estado</th><th class="p-3 text-center">Ações</th></tr></thead>
                         <tbody id="user-table-body" class="divide-y divide-slate-100 font-bold text-slate-700"></tbody>
                     </table>
                 </div>
@@ -125,141 +111,106 @@
 
     <div id="modal-novo" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
         <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden">
-            <div class="p-4 border-b flex justify-between bg-slate-50 items-center">
-                <h3 class="font-black text-slate-800 uppercase text-xs tracking-wider"><i class="fa-solid fa-square-plus text-blue-600 mr-2 text-sm"></i>Formulário de Abertura de Protocolo</h3>
-                <button onclick="closeModal('modal-novo')" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-sm"></i></button>
-            </div>
+            <div class="p-4 border-b flex justify-between bg-slate-50 items-center"><h3 class="font-black text-slate-800 uppercase text-xs">Novo Chamado</h3><button onclick="closeModal('modal-novo')"><i class="fa-solid fa-xmark text-sm"></i></button></div>
             <form onsubmit="submitProtocolo(event)" class="p-6 space-y-4">
                 <div class="grid grid-cols-3 gap-3">
-                    <div class="col-span-2">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Nome do Solicitante</label>
-                        <input type="text" id="np-solicitante" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">CPF do Solicitante</label>
-                        <input type="text" id="np-cpf" placeholder="Apenas números" class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Endereço do Problema (Rua, Número)</label>
-                        <input type="text" id="np-endereco" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Telefone de Contato</label>
-                        <input type="text" id="np-telefone" required class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Bairro Mandatório</label>
-                        <input type="text" id="np-bairro" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Ponto de Referência Próximo</label>
-                        <input type="text" id="np-ref" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Tipo de Solicitação</label>
-                        <select id="np-solicitacao" required class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="col-span-2"><label class="block text-[9px] font-black text-slate-500 uppercase">Solicitante</label><input type="text" id="np-solicitante" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
+                    <div><label class="block text-[9px] font-black text-slate-500 uppercase">CPF</label><input type="text" id="np-cpf" class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50"></div>
+                    <div class="col-span-2"><label class="block text-[9px] font-black text-slate-500 uppercase">Endereço</label><input type="text" id="np-endereco" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
+                    <div><label class="block text-[9px] font-black text-slate-500 uppercase">Telefone</label><input type="text" id="np-telefone" required class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50"></div>
+                    <div><label class="block text-[9px] font-black text-slate-500 uppercase">Bairro</label><input type="text" id="np-bairro" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
+                    <div class="col-span-2"><label class="block text-[9px] font-black text-slate-500 uppercase">Referência</label><input type="text" id="np-ref" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
+                    <div><label class="block text-[9px] font-black text-slate-500 uppercase">Serviço</label>
+                        <select id="np-solicitacao" required class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold uppercase">
                             <option value="" disabled selected>Selecione...</option>
                             <option value="TROCA DE LÂMPADA">Troca de Lâmpada</option>
                             <option value="CURTO CIRCUITO">Curto Circuito</option>
-                            <option value="BRAÇO DE LUMINÁRIA QUEBRADO">Braço de Luminária Quebrado</option>
                             <option value="POSTE DANIFICADO">Poste Danificado</option>
-                            <option value="MANUTENÇÃO DE REDE">Manutenção de Rede</option>
                             <option value="OUTROS ATENDIMENTOS">Outros Atendimentos</option>
                         </select>
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Detalhes Adicionais do Serviço</label>
-                        <input type="text" id="np-detalhes" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="col-span-3">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Observações Internas Iniciais</label>
-                        <input type="text" id="np-obs" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
+                    <div class="col-span-2"><label class="block text-[9px] font-black text-slate-500 uppercase">Detalhes Adicionais</label><input type="text" id="np-detalhes" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
+                    <div class="col-span-3"><label class="block text-[9px] font-black text-slate-500 uppercase">Observações</label><input type="text" id="np-obs" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
                 </div>
-                <div class="pt-3 flex justify-end gap-2 border-t mt-4">
-                    <button type="button" onclick="closeModal('modal-novo')" class="px-4 py-2 border rounded-xl text-xs font-bold shadow-sm">Cancelar</button>
-                    <button type="submit" id="btn-save-np" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md hover:bg-blue-700">Registrar na Base</button>
-                </div>
+                <div class="pt-3 flex justify-end gap-2 border-t mt-4"><button type="button" onclick="closeModal('modal-novo')" class="px-4 py-2 border rounded-xl text-xs font-bold">Cancelar</button><button type="submit" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl">Registrar</button></div>
             </form>
         </div>
     </div>
 
     <div id="modal-usuario" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
-        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl">
-            <div class="p-4 border-b bg-slate-50 flex justify-between items-center rounded-t-3xl">
-                <h3 class="font-black text-slate-800 uppercase text-xs tracking-wide" id="user-modal-title">Operador</h3>
-                <button onclick="closeModal('modal-usuario')" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
-            </div>
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl">
+            <div class="p-4 border-b bg-slate-50 flex justify-between items-center rounded-t-3xl"><h3 class="font-black text-slate-800 uppercase text-xs" id="user-modal-title">Operador</h3><button onclick="closeModal('modal-usuario')"><i class="fa-solid fa-xmark"></i></button></div>
             <form onsubmit="submitUser(event)" class="p-5 space-y-4">
-                <div>
-                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Identificação / Login</label>
-                    <input type="text" id="mu-username" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Login</label><input type="text" id="mu-username" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
+                    <div><label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Senha</label><input type="text" id="mu-password" required class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50"></div>
                 </div>
                 <div>
-                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Código de Acesso (Senha)</label>
-                    <input type="text" id="mu-password" required class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Perfil de Permissão</label>
-                    <select id="mu-role" required class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="ATENDENTE">ATENDENTE</option>
-                        <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
-                        <option value="SUPERVISOR">SUPERVISOR</option>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Perfil (Supervisor vê tudo)</label>
+                    <select id="mu-role" required class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold">
+                        <option value="ATENDENTE">ATENDENTE</option><option value="ADMINISTRATIVO">ADMINISTRATIVO</option><option value="SUPERVISOR">SUPERVISOR</option>
                     </select>
                 </div>
-                <div class="pt-3 flex justify-end gap-2 border-t">
-                    <button type="button" onclick="closeModal('modal-usuario')" class="px-4 py-2 border rounded-xl text-xs font-bold">Voltar</button>
-                    <button type="submit" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl shadow-md">Salvar Configurações</button>
+                <div>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-2">Abas Permitidas (Marque para customizar)</label>
+                    <div id="permissions-container" class="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-600 bg-slate-50 p-3 rounded-xl border">
+                        </div>
                 </div>
+                <div class="pt-3 flex justify-end gap-2 border-t"><button type="button" onclick="closeModal('modal-usuario')" class="px-4 py-2 border rounded-xl text-xs font-bold">Voltar</button><button type="submit" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl">Salvar</button></div>
             </form>
         </div>
     </div>
 
+    <div id="modal-exportacao" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl">
+            <div class="p-4 border-b bg-slate-50 flex justify-between items-center rounded-t-3xl"><h3 class="font-black text-slate-800 uppercase text-xs"><i class="fa-solid fa-file-export text-emerald-600 mr-2"></i>Exportação de Dados</h3><button onclick="closeModal('modal-exportacao')"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Filtrar por Status (Aba Atual)</label>
+                    <select id="export-status-filter" class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold">
+                        <option value="TODOS">TODOS OS STATUS</option><option value="ABERTO">APENAS ABERTOS</option><option value="GARANTIA">APENAS GARANTIA</option><option value="RESOLVIDO">APENAS RESOLVIDOS</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Quantidade Limite</label>
+                    <select id="export-limit" class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold">
+                        <option value="ALL">Exportar Todos Encontrados</option><option value="50">Limitar a 50</option><option value="100">Limitar a 100</option>
+                    </select>
+                </div>
+                <div class="pt-3 flex flex-col gap-2 border-t">
+                    <button onclick="gerarExportacaoExcel()" class="w-full py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl"><i class="fa-solid fa-file-excel mr-2"></i>Gerar Planilha Excel</button>
+                    <button onclick="gerarExportacaoPDF()" class="w-full py-3 bg-rose-600 text-white text-xs font-black uppercase rounded-xl"><i class="fa-solid fa-file-pdf mr-2"></i>Gerar Tabela PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let currentUser = null, currentRole = null, currentTab = "ENTRADA", protocolsData = [], openRows = {}, selectedProtocols = {}, globalCounts = {};
-
+        let currentUser = null, currentRole = null, currentTab = "ENTRADA", protocolsData = [], openRows = {}, userAllowedTabs = [];
         const ALL_TABS = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "SUPERVISOR", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA", "USUÁRIOS"];
-        const STATS_TABS = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "SUPERVISOR", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA"];
 
-        function formatarDataHora(stringData) {
-            if (!stringData) return "-";
+        function formatarDataHora(str) {
+            if (!str) return "-";
             try {
-                let d = new Date(stringData);
-                if (isNaN(d.getTime())) {
-                    let limpa = stringData.toString().split(".")[0];
-                    return limpa;
-                }
-                const dia = String(d.getDate()).padStart(2, '0');
-                const mes = String(d.getMonth() + 1).padStart(2, '0');
-                const ano = d.getFullYear();
-                const hora = String(d.getHours()).padStart(2, '0');
-                const min = String(d.getMinutes()).padStart(2, '0');
-                return `${dia}/${mes}/${ano} - ${hora}:${min}`;
-            } catch (e) {
-                return stringData;
-            }
+                let d = new Date(str);
+                if (isNaN(d.getTime())) return str.toString().split(".")[0];
+                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            } catch (e) { return str; }
         }
 
         function showToast(msg, type) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = msg;
-            document.getElementById('toast-icon').innerHTML = type === 'success' ? '<i class="fa-solid fa-circle-check text-green-500"></i>' : '<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
-            toast.className = `fixed top-5 right-5 z-50 transform transition-all duration-300 bg-white shadow-2xl rounded-2xl p-4 flex items-center gap-3 border-l-4 ${type === 'success' ? 'border-green-500' : 'border-red-500'}`;
-            setTimeout(() => toast.classList.add('translate-y-[-120%]', 'opacity-0'), 3000);
+            const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = msg;
+            document.getElementById('toast-icon').innerHTML = type==='success'?'<i class="fa-solid fa-circle-check text-green-500"></i>':'<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
+            t.className = `fixed top-5 right-5 z-50 transform transition-all duration-300 bg-white shadow-2xl rounded-2xl p-4 flex items-center gap-3 border-l-4 ${type==='success'?'border-green-500':'border-red-500'}`;
+            setTimeout(() => t.classList.add('translate-y-[-120%]', 'opacity-0'), 3000);
         }
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         async function fetchAPI(payload) {
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST', redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                return await response.json();
-            } catch (error) { return { success: false, error: "Erro de rede com o servidor Google." }; }
+            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); return await res.json(); } 
+            catch (e) { return { success: false, error: "Erro de rede." }; }
         }
 
         async function handleLogin(e) {
@@ -268,12 +219,10 @@
             const res = await fetchAPI({ action: "login", username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value });
             if (res.success) {
                 currentUser = res.username; currentRole = res.role;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('user-name').textContent = currentUser;
-                document.getElementById('user-role').textContent = "Perfil: " + currentRole;
-                buildTabMenu();
-                showToast("Bem-vindo de volta!", "success");
+                userAllowedTabs = res.allowedTabs ? res.allowedTabs.split(',') : [];
+                document.getElementById('login-screen').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('user-name').textContent = currentUser; document.getElementById('user-role').textContent = "Perfil: " + currentRole;
+                buildTabMenu(); showToast("Acesso Liberado", "success");
             } else { showToast(res.error, "error"); }
             btn.textContent = "Autenticar Entrada"; btn.disabled = false;
         }
@@ -281,307 +230,138 @@
         function logout() { location.reload(); }
 
         function buildTabMenu() {
-            const container = document.getElementById('tab-menu');
-            container.innerHTML = "";
-            openRows = {}; selectedProtocols = {};
-            document.getElementById('chk-all').checked = false;
-
+            const container = document.getElementById('tab-menu'); container.innerHTML = ""; openRows = {};
             let allowedTabs = [];
-            if (currentRole === "ATENDENTE") allowedTabs = ["ENTRADA"];
+            if (userAllowedTabs.length > 0 && currentRole !== "SUPERVISOR") allowedTabs = userAllowedTabs;
+            else if (currentRole === "ATENDENTE") allowedTabs = ["ENTRADA"];
             else if (currentRole === "ADMINISTRATIVO") allowedTabs = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA"];
-            else if (currentRole === "SUPERVISOR") allowedTabs = ALL_TABS;
+            else allowedTabs = ALL_TABS;
 
-            currentTab = allowedTabs[0];
+            currentTab = allowedTabs[0] || "ENTRADA";
 
             allowedTabs.forEach(tab => {
-                let btn = document.createElement("button");
-                btn.id = `btn-tab-${allowedTabs.indexOf(tab)}`;
-                btn.className = `tab-btn px-4 py-2 text-xs font-black uppercase rounded-t-xl transition duration-150 whitespace-nowrap ${tab === currentTab ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
-                btn.textContent = tab;
-                btn.onclick = () => switchTab(tab, btn.id);
-                container.appendChild(btn);
+                let btn = document.createElement("button"); btn.id = `btn-tab-${allowedTabs.indexOf(tab)}`;
+                btn.className = `tab-btn px-4 py-2 text-xs font-black uppercase rounded-t-xl transition whitespace-nowrap ${tab === currentTab ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`;
+                btn.textContent = tab; btn.onclick = () => switchTab(tab, btn.id); container.appendChild(btn);
             });
-
-            buildStatsDashboard(allowedTabs.filter(t => STATS_TABS.includes(t)));
             executeLoad();
-        }
-
-        function buildStatsDashboard(visibleTabs) {
-            const container = document.getElementById('stats-container');
-            container.innerHTML = "";
-            visibleTabs.forEach(tab => {
-                container.innerHTML += `
-                    <div class="bg-white p-3 border border-slate-200 rounded-2xl shadow-sm">
-                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-wider truncate" title="${tab}">${tab}</p>
-                        <p id="stat-card-${tab}" class="text-xl font-black text-slate-800 mt-0.5">...</p>
-                    </div>
-                `;
-            });
         }
 
         function switchTab(tabName, btnId) {
             currentTab = tabName;
             document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('bg-blue-600', 'text-white'); b.classList.add('bg-slate-200', 'text-slate-500'); });
             document.getElementById(btnId).classList.remove('bg-slate-200', 'text-slate-500'); document.getElementById(btnId).classList.add('bg-blue-600', 'text-white');
-            selectedProtocols = {}; document.getElementById('chk-all').checked = false; updateSelectedCount();
             executeLoad();
         }
 
         function executeLoad() {
             if (currentTab === "USUÁRIOS") {
-                document.getElementById('main-data-card').classList.add('hidden');
-                document.getElementById('control-bar').classList.add('hidden');
-                document.getElementById('stats-container').classList.add('hidden');
-                document.getElementById('user-management-card').classList.remove('hidden');
+                document.getElementById('main-data-card').classList.add('hidden'); document.getElementById('control-bar').classList.add('hidden'); document.getElementById('stats-container').classList.add('hidden'); document.getElementById('user-management-card').classList.remove('hidden');
                 loadUsers();
             } else {
-                document.getElementById('user-management-card').classList.add('hidden');
-                document.getElementById('main-data-card').classList.remove('hidden');
-                document.getElementById('control-bar').classList.remove('hidden');
-                document.getElementById('stats-container').classList.remove('hidden');
+                document.getElementById('user-management-card').classList.add('hidden'); document.getElementById('main-data-card').classList.remove('hidden'); document.getElementById('control-bar').classList.remove('hidden'); document.getElementById('stats-container').classList.remove('hidden');
                 loadProtocols();
             }
         }
 
         async function loadProtocols() {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-xl"></i> Sincronizando dados...</td></tr>`;
-            
+            const tbody = document.getElementById('table-body'); tbody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> Atualizando...</td></tr>`;
             const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole, tab: currentTab });
-            if (res.success) { 
-                protocolsData = res.data; 
-                renderTable(protocolsData); 
-                updateDashboardCounters();
-            } else { tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-red-500 font-bold">Erro de sincronização.</td></tr>`; }
+            if (res.success) { protocolsData = res.data; calcularCardsDaAba(); renderTable(protocolsData); }
         }
 
-        async function updateDashboardCounters() {
-            let tabsToFetch = [];
-            if (currentRole === "ATENDENTE") tabsToFetch = ["ENTRADA"];
-            else if (currentRole === "ADMINISTRATIVO") tabsToFetch = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA"];
-            else if (currentRole === "SUPERVISOR") tabsToFetch = STATS_TABS;
-
-            tabsToFetch.forEach(async (tab) => {
-                if(tab === currentTab) {
-                    globalCounts[tab] = protocolsData.length;
-                    let el = document.getElementById(`stat-card-${tab}`);
-                    if(el) el.textContent = protocolsData.length;
-                } else {
-                    const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole, tab: tab });
-                    if(res.success) {
-                        globalCounts[tab] = res.data.length;
-                        let el = document.getElementById(`stat-card-${tab}`);
-                        if(el) el.textContent = res.data.length;
-                    }
-                }
+        function calcularCardsDaAba() {
+            let ab = 0, gar = 0, res = 0, out = 0;
+            protocolsData.forEach(p => {
+                const st = (p.status||"").toUpperCase();
+                if(st==="ABERTO") ab++; else if(st==="GARANTIA") gar++; else if(st==="RESOLVIDO" || st==="CONCLUÍDO") res++; else out++;
             });
+            document.getElementById('stat-total').textContent = protocolsData.length;
+            document.getElementById('stat-abertos').textContent = ab; document.getElementById('stat-garantia').textContent = gar;
+            document.getElementById('stat-resolvidos').textContent = res; document.getElementById('stat-outros').textContent = out;
         }
 
         function renderTable(data) {
             const tbody = document.getElementById('table-body');
-            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center p-6 text-slate-400 font-bold">Sem registros nesta aba.</td></tr>`; return; }
-
+            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center p-6 font-bold text-slate-400">Vazio.</td></tr>`; return; }
             let html = "";
             data.forEach(p => {
-                let badge = "bg-slate-100 text-slate-600";
-                if (p.status === "ABERTO") badge = "bg-amber-100 text-amber-700 border-amber-300";
-                if (p.status === "GARANTIA") badge = "bg-rose-100 text-rose-700 border-rose-300";
-                if (p.status === "RESOLVIDO" || p.status === "CONCLUÍDO") badge = "bg-emerald-100 text-emerald-700 border-emerald-300";
-
-                let isExpanded = openRows[p.protocolo] ? "" : "hidden";
-                let iconArrow = openRows[p.protocolo] ? "fa-eye-slash text-red-500" : "fa-eye text-blue-600";
-                let isChecked = selectedProtocols[p.protocolo] ? "checked" : "";
-
-                html += `
-                    <tr class="hover:bg-slate-50 transition duration-150">
-                        <td class="p-3 text-center print:hidden">
-                            <input type="checkbox" class="row-chk rounded border-slate-300" data-id="${p.protocolo}" ${isChecked} onchange="toggleSelectRow(this, '${p.protocolo}')">
-                        </td>
-                        <td class="p-3 text-center print:hidden">
-                            <button onclick="toggleRow('${p.protocolo}')" class="p-1 focus:outline-none text-sm"><i class="fa-solid ${iconArrow}"></i></button>
-                        </td>
-                        <td class="p-3 font-semibold text-slate-500">${formatarDataHora(p.dataHora)}</td>
-                        <td class="p-3 font-black text-slate-900 tracking-wide">${p.protocolo}</td>
-                        <td class="p-3 font-bold text-slate-600">${p.atendente}</td>
-                        <td class="p-3 font-black text-slate-700 uppercase">${p.solicitante}</td>
-                        <td class="p-3 font-black text-slate-700 uppercase">${p.bairro}</td>
-                        <td class="p-3 text-center">
-                            <select onchange="changeStatus('${p.protocolo}', this.value)" class="text-[10px] font-black uppercase rounded-lg border px-2.5 py-1 bg-white outline-none cursor-pointer tracking-wider text-center border-slate-300 ${badge}">
-                                <option value="${p.status}" selected disabled>${p.status}</option>
-                                <option value="ABERTO">ABERTO</option>
-                                <option value="URGENTE/ATRASADO">URGENTE/ATRASADO</option>
-                                <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
-                                <option value="SUPERVISOR">SUPERVISOR</option>
-                                <option value="COM FUNCIONÁRIO">COM FUNCIONÁRIO</option>
-                                <option value="IMPLANTAÇÃO">IMPLANTAÇÃO</option>
-                                <option value="OBRA">OBRA</option>
-                                <option value="TELECOM">TELECOM</option>
-                                <option value="GARANTIA">GARANTIA</option>
-                                <option value="RESOLVIDO">RESOLVIDO</option>
-                                <option value="CONCLUÍDO">CONCLUÍDO</option>
-                                <option value="CANCELADO">CANCELADO</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr id="details-${p.protocolo}" class="${isExpanded} expanded-row">
-                        <td colspan="8" class="p-4 bg-slate-50 border-l-4 border-blue-600">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold">
-                                <div class="bg-white p-3 rounded-xl border">
-                                    <p class="text-[9px] uppercase text-slate-400 font-black mb-1"><i class="fa-solid fa-map-pin mr-1"></i>Localização Detalhada</p>
-                                    <p class="text-slate-700 uppercase"><b>Bairro:</b> ${p.bairro}</p>
-                                    <p class="text-slate-700 uppercase mt-1"><b>Endereço/Rua:</b> ${p.endereco}</p>
-                                    <p class="text-slate-700 uppercase mt-1"><b>Ponto de Referência:</b> ${p.referencia || 'NÃO INFORMADO'}</p>
-                                </div>
-                                <div class="bg-white p-3 rounded-xl border">
-                                    <p class="text-[9px] uppercase text-slate-400 font-black mb-1"><i class="fa-solid fa-id-card mr-1"></i>Contato Operacional</p>
-                                    <p class="text-slate-700"><b>Telefone:</b> ${p.telefone || '-'}</p>
-                                    <p class="text-slate-700 mt-1"><b>CPF do Solicitante:</b> ${p.cpf || '-'}</p>
-                                </div>
-                                <div class="bg-white p-3 rounded-xl border">
-                                    <p class="text-[9px] uppercase text-slate-400 font-black mb-1"><i class="fa-solid fa-clipboard-list mr-1"></i>Serviço Aplicado</p>
-                                    <p class="text-slate-700 uppercase"><b>Solicitação:</b> ${p.solicitacao}</p>
-                                    <p class="text-slate-600 uppercase mt-1 font-normal"><b>Detalhes Adicionais:</b> ${p.detalhes || '-'}</p>
-                                    <p class="text-blue-700 uppercase mt-1.5 pt-1.5 border-t text-[11px]"><b>OBSERVAÇÃO INTERNA:</b> ${p.obs || '-'}</p>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                let badge = "bg-slate-100"; const st = (p.status||"").toUpperCase();
+                if(st==="ABERTO") badge = "bg-amber-100 text-amber-700"; else if(st==="GARANTIA") badge = "bg-rose-100 text-rose-700"; else if(st==="RESOLVIDO") badge = "bg-emerald-100 text-emerald-700";
+                let exp = openRows[p.protocolo] ? "" : "hidden"; let ico = openRows[p.protocolo] ? "fa-eye-slash text-red-500" : "fa-eye text-blue-600";
+                html += `<tr class="hover:bg-slate-50"><td class="p-3 text-center print:hidden"><button onclick="toggleRow('${p.protocolo}')"><i class="fa-solid ${ico}"></i></button></td><td class="p-3 font-semibold text-slate-500">${formatarDataHora(p.dataHora)}</td><td class="p-3 font-black tracking-wide">${p.protocolo}</td><td class="p-3">${p.atendente}</td><td class="p-3 font-bold uppercase">${p.solicitante}</td><td class="p-3 uppercase">${p.bairro}</td><td class="p-3 text-center"><select onchange="changeStatus('${p.protocolo}', this.value)" class="text-[9px] font-black uppercase rounded border p-1 outline-none ${badge}"><option value="${st}" selected disabled>${st}</option><option value="ABERTO">ABERTO</option><option value="RESOLVIDO">RESOLVIDO</option><option value="GARANTIA">GARANTIA</option><option value="TELECOM">TELECOM</option><option value="OBRA">OBRA</option></select></td></tr>
+                <tr class="${exp} bg-slate-50"><td colspan="7" class="p-4 border-l-4 border-blue-600"><div class="grid grid-cols-3 gap-4 text-xs font-bold"><div class="bg-white p-3 border rounded">Local: ${p.bairro} - ${p.endereco}</div><div class="bg-white p-3 border rounded">Contato: ${p.telefone} / ${p.cpf}</div><div class="bg-white p-3 border rounded">Serviço: ${p.solicitacao}<br><span class="text-[10px] text-blue-600">${p.obs||'-'}</span></div></div></td></tr>`;
             });
             tbody.innerHTML = html;
         }
 
-        function toggleSelectRow(chk, id) {
-            if (chk.checked) selectedProtocols[id] = true;
-            else delete selectedProtocols[id];
-            updateSelectedCount();
-        }
-
-        function toggleSelectAll(chk) {
-            document.querySelectorAll('.row-chk').forEach(el => {
-                el.checked = chk.checked;
-                const id = el.getAttribute('data-id');
-                if (chk.checked) selectedProtocols[id] = true;
-                else delete selectedProtocols[id];
-            });
-            updateSelectedCount();
-        }
-
-        function updateSelectedCount() {
-            const count = Object.keys(selectedProtocols).length;
-            const el = document.getElementById('selected-count');
-            if (count > 0) { el.textContent = `${count} selecionado(s)`; el.classList.remove('hidden'); }
-            else { el.classList.add('hidden'); }
-        }
-
-        function toggleRow(proto) { openRows[proto] = !openRows[proto]; renderTable(protocolsData); }
-
-        function filterTable() {
-            const val = document.getElementById('search-input').value.toLowerCase();
-            const filtered = protocolsData.filter(p => 
-                (p.protocolo||'').toLowerCase().includes(val) || (p.solicitante||'').toLowerCase().includes(val) ||
-                (p.bairro||'').toLowerCase().includes(val) || (p.endereco||'').toLowerCase().includes(val)
-            );
-            renderTable(filtered);
-        }
-
-        // SALVA OS DADOS NA SESSÃO E ABRE A ABA DO RELATÓRIO
-        function gerarRelatorioJanela() {
-            if (protocolsData.length === 0) {
-                showToast("Não há dados na aba atual para gerar o relatório.", "error");
-                return;
-            }
-            sessionStorage.setItem('seripm_report_data', JSON.stringify(protocolsData));
-            sessionStorage.setItem('seripm_report_tab', currentTab);
-            window.open('relatorio.html', '_blank');
-        }
+        function toggleRow(id) { openRows[id] = !openRows[id]; renderTable(protocolsData); }
+        function filterTable() { const v = document.getElementById('search-input').value.toLowerCase(); renderTable(protocolsData.filter(p => (p.protocolo||'').toLowerCase().includes(v) || (p.bairro||'').toLowerCase().includes(v))); }
 
         async function submitProtocolo(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-save-np'); btn.textContent = "Gravando..."; btn.disabled = true;
-            const res = await fetchAPI({
-                action: "createProtocol", username: currentUser,
-                data: {
-                    solicitante: document.getElementById('np-solicitante').value, cpf: document.getElementById('np-cpf').value,
-                    telefone: document.getElementById('np-telefone').value, endereco: document.getElementById('np-endereco').value,
-                    bairro: document.getElementById('np-bairro').value, referencia: document.getElementById('np-ref').value,
-                    solicitacao: document.getElementById('np-solicitacao').value, detalhes: document.getElementById('np-detalhes').value,
-                    obs: document.getElementById('np-obs').value
-                }
-            });
-            if (res.success) {
-                showToast("Protocolo Criado: " + res.protocolo, "success");
-                closeModal('modal-novo'); document.querySelector('#modal-novo form').reset();
-                if (currentTab === "ENTRADA") loadProtocols();
-            } else { showToast("Erro ao gravar chamado.", "error"); }
-            btn.textContent = "Registrar na Base"; btn.disabled = false;
+            const res = await fetchAPI({ action: "createProtocol", username: currentUser, tab: currentTab, data: { solicitante: document.getElementById('np-solicitante').value, cpf: document.getElementById('np-cpf').value, telefone: document.getElementById('np-telefone').value, endereco: document.getElementById('np-endereco').value, bairro: document.getElementById('np-bairro').value, referencia: document.getElementById('np-ref').value, solicitacao: document.getElementById('np-solicitacao').value, detalhes: document.getElementById('np-detalhes').value, obs: document.getElementById('np-obs').value } });
+            if (res.success) { showToast("Protocolo Criado: " + res.protocolo, "success"); closeModal('modal-novo'); loadProtocols(); }
         }
 
-        async function changeStatus(id, novoStatus) {
-            if (!confirm(`Confirmar mudança do protocolo ${id} para ${novoStatus}?`)) return loadProtocols();
-            showToast("Atualizando...", "success");
-            const res = await fetchAPI({ action: "updateStatus", username: currentUser, protocolId: id, newStatus: novoStatus, tab: currentTab });
-            if (res.success) { showToast("Sincronizado!", "success"); loadProtocols(); }
-            else { showToast("Erro operacional.", "error"); }
+        async function changeStatus(id, nSt) { if(confirm(`Mover protocolo ${id} para ${nSt}?`)) { await fetchAPI({action:"updateStatus", username:currentUser, protocolId:id, newStatus:nSt, tab:currentTab}); loadProtocols(); } }
+
+        function gerarRelatorioJanela() {
+            sessionStorage.setItem('seripm_report_data', JSON.stringify(protocolsData)); sessionStorage.setItem('seripm_report_tab', currentTab);
+            window.open('relatorio.html', '_blank');
         }
 
+        // ================= EXPORTAÇÃO AVANÇADA (EXCEL / PDF) =================
+        function gerarExportacaoExcel() {
+            const st = document.getElementById('export-status-filter').value; const lim = document.getElementById('export-limit').value;
+            let d = protocolsData; if(st !== "TODOS") d = d.filter(p => (p.status||"").toUpperCase() === st);
+            if(lim !== "ALL") d = d.slice(0, parseInt(lim));
+            if(d.length === 0) return alert("Nenhum dado encontrado com este filtro.");
+            
+            const ws = XLSX.utils.json_to_sheet(d); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Protocolos");
+            XLSX.writeFile(wb, `Planilha_SERIPM_${currentTab}_${st}.xlsx`);
+            closeModal('modal-exportacao');
+        }
+
+        function gerarExportacaoPDF() {
+            const st = document.getElementById('export-status-filter').value; const lim = document.getElementById('export-limit').value;
+            let d = protocolsData; if(st !== "TODOS") d = d.filter(p => (p.status||"").toUpperCase() === st);
+            if(lim !== "ALL") d = d.slice(0, parseInt(lim));
+            if(d.length === 0) return alert("Nenhum dado encontrado com este filtro.");
+
+            // Cria tabela temporária para o PDF
+            const div = document.createElement('div');
+            div.innerHTML = `<h2 style="font-family:sans-serif; text-align:center;">Relatório de Exportação - Aba ${currentTab}</h2><table style="width:100%; border-collapse:collapse; font-family:sans-serif; font-size:10px;" border="1"><thead><tr style="background:#f1f5f9;"><th>Protocolo</th><th>Data</th><th>Bairro</th><th>Solicitante</th><th>Status</th></tr></thead><tbody>` + 
+            d.map(p => `<tr><td>${p.protocolo}</td><td>${formatarDataHora(p.dataHora)}</td><td>${p.bairro}</td><td>${p.solicitante}</td><td>${p.status}</td></tr>`).join('') + `</tbody></table>`;
+            
+            html2pdf().set({ margin: 10, filename: `PDF_SERIPM_${currentTab}_${st}.pdf`, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(div).save();
+            closeModal('modal-exportacao');
+        }
+
+        // ================= GESTÃO DE USUÁRIOS E PERMISSÕES =================
         async function loadUsers() {
             const tbody = document.getElementById('user-table-body');
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> Carregando operadores...</td></tr>`;
             const res = await fetchAPI({ action: "getUsers", username: currentUser, role: currentRole });
             if (res.success) {
-                let html = "";
-                res.data.forEach(u => {
-                    let btnStatusText = u.status === "ATIVO" ? "Desativar" : "Ativar";
-                    let btnColor = u.status === "ATIVO" ? "bg-red-50 text-red-600 border-red-200" : "bg-green-50 text-green-600 border-green-200";
-                    let labelColor = u.status === "ATIVO" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600";
-
-                    html += `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="p-3 text-slate-900 uppercase">${u.username}</td>
-                            <td class="p-3 font-mono text-slate-500">${u.password}</td>
-                            <td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px]">${u.role}</span></td>
-                            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-[9px] uppercase border ${labelColor}">${u.status}</span></td>
-                            <td class="p-3 text-center flex justify-center gap-1.5">
-                                <button onclick="editUser('${u.username}', '${u.password}', '${u.role}')" class="px-2.5 py-1 border bg-slate-50 rounded-lg hover:bg-slate-100 text-slate-600"><i class="fa-solid fa-user-gear"></i></button>
-                                <button onclick="toggleUser('${u.username}')" class="px-2.5 py-1 border rounded-lg text-[10px] uppercase font-black tracking-wide transition ${btnColor}">${btnStatusText}</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                tbody.innerHTML = html;
-            } else { tbody.innerHTML = `<tr><td colspan="5" class="text-center p-3 text-red-500">Erro de leitura.</td></tr>`; }
+                tbody.innerHTML = res.data.map(u => `<tr class="hover:bg-slate-50"><td class="p-3">${u.username}</td><td class="p-3">${u.password}</td><td class="p-3 text-[10px]">${u.role}</td><td class="p-3 text-[9px] truncate max-w-xs">${u.tabs||'PADRÃO'}</td><td class="p-3">${u.status}</td><td class="p-3"><button onclick="editUser('${u.username}','${u.password}','${u.role}','${u.tabs}')" class="p-1 border rounded mr-1"><i class="fa-solid fa-pen"></i></button></td></tr>`).join('');
+            }
+        }
+        
+        function buildCheckboxes(checkedStr) {
+            const c = document.getElementById('permissions-container'); c.innerHTML = "";
+            const arr = checkedStr ? checkedStr.split(',') : [];
+            ALL_TABS.forEach(t => { if(t!=="USUÁRIOS") c.innerHTML += `<label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="${t}" class="chk-tab" ${arr.includes(t)?'checked':''}> ${t}</label>`; });
         }
 
-        function openUserModal() {
-            document.getElementById('user-modal-title').textContent = "Cadastrar Novo Operador";
-            document.getElementById('mu-username').value = ""; document.getElementById('mu-username').disabled = false;
-            document.getElementById('mu-password').value = ""; openModal('modal-usuario');
-        }
-
-        function editUser(user, pass, role) {
-            document.getElementById('user-modal-title').textContent = "Alterar Credenciais";
-            document.getElementById('mu-username').value = user; document.getElementById('mu-username').disabled = true;
-            document.getElementById('mu-password').value = pass; document.getElementById('mu-role').value = role;
-            openModal('modal-usuario');
-        }
+        function openUserModal() { document.getElementById('mu-username').value = ""; document.getElementById('mu-username').disabled = false; buildCheckboxes(""); openModal('modal-usuario'); }
+        function editUser(user, pass, role, tabs) { document.getElementById('mu-username').value = user; document.getElementById('mu-username').disabled = true; document.getElementById('mu-password').value = pass; document.getElementById('mu-role').value = role; buildCheckboxes(tabs); openModal('modal-usuario'); }
 
         async function submitUser(e) {
             e.preventDefault();
-            const payload = {
-                action: "saveUser", username: currentUser, role: currentRole,
-                userData: { username: document.getElementById('mu-username').value, password: document.getElementById('mu-password').value, role: document.getElementById('mu-role').value }
-            };
-            const res = await fetchAPI(payload);
-            if (res.success) { showToast(res.message, "success"); closeModal('modal-usuario'); loadUsers(); }
-            else { showToast(res.error, "error"); }
-        }
-
-        async function toggleUser(targetName) {
-            if (!confirm(`Deseja alterar o estado da conta de ${targetName}?`)) return;
-            const res = await fetchAPI({ action: "toggleUser", username: currentUser, role: currentRole, targetUser: targetName });
-            if (res.success) { showToast("Estado modificado!", "success"); loadUsers(); }
-            else { showToast(res.error, "error"); }
+            const chk = Array.from(document.querySelectorAll('.chk-tab:checked')).map(el => el.value).join(',');
+            await fetchAPI({ action: "saveUser", username: currentUser, role: currentRole, userData: { username: document.getElementById('mu-username').value, password: document.getElementById('mu-password').value, role: document.getElementById('mu-role').value, tabs: chk } });
+            closeModal('modal-usuario'); loadUsers();
         }
     </script>
 </body>
