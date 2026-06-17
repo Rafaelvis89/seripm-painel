@@ -71,6 +71,19 @@
             data.forEach(p => {
                 const st = (p.status || "ABERTO").toUpperCase();
                 const bairroLimpo = sanitizarBairro(p.bairro); // Limpeza de acentos aplicada aqui
+                const dataAtual = new Date();
+                const dataProtocolo = new Date(p.dataHora); // Certifique-se que p.dataHora é a data da criação
+                const diffTime = Math.abs(dataAtual - dataProtocolo);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        let statusFinal = p.status.toUpperCase();
+
+                if (statusFinal === "ABERTO" && diffDays > 15) {
+                statusFinal = "ATRASADO";
+            }
+
+                // Agora use esse statusFinal para contar nas suas estatísticas
+                if (statusFinal === "ATRASADO") stats.atrasados++;
                 
                 if (st === "ABERTO") ab++; else if (st === "GARANTIA") ga++; else if (st === "RESOLVIDO") re++; else ou++;
                 stMap[st] = (stMap[st] || 0) + 1;
