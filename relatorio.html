@@ -32,7 +32,7 @@
             <div class="bg-white p-5 rounded-2xl border-b-4 border-b-amber-400"><p class="text-[10px] uppercase font-black text-slate-400">Abertos</p><p id="card-abertos" class="text-3xl font-black text-slate-800">0</p></div>
             <div class="bg-white p-5 rounded-2xl border-b-4 border-b-rose-400"><p class="text-[10px] uppercase font-black text-slate-400">Garantia</p><p id="card-garantia" class="text-3xl font-black text-slate-800">0</p></div>
             <div class="bg-white p-5 rounded-2xl border-b-4 border-b-emerald-400"><p class="text-[10px] uppercase font-black text-slate-400">Resolvidos</p><p id="card-resolvidos" class="text-3xl font-black text-slate-800">0</p></div>
-            <div class="bg-white p-5 rounded-2xl border-b-4 border-b-slate-400"><p class="text-[10px] uppercase font-black text-slate-400">Outros</p><p id="card-outros" class="text-3xl font-black text-slate-800">0</p></div>
+            <div class="bg-white p-5 rounded-2xl border-b-4 border-b-slate-400"><p class="text-[10px] uppercase font-black text-slate-400">Atrasados</p><p id="card-atrasados" class="text-3xl font-black text-slate-800">0</p></div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 avoid-break">
@@ -41,10 +41,10 @@
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden avoid-break">
-            <div class="p-4 bg-slate-50 border-b"><h3 class="text-xs font-black uppercase"><i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i>Detalhamento Operacional por Bairro Agrupado</h3></div>
+            <div class="p-4 bg-slate-50 border-b"><h3 class="text-xs font-black uppercase"><i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i>Detalhamento Operacional por Bairro</h3></div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
-                    <thead><tr class="bg-white border-b text-[10px] font-black uppercase"><th class="p-3.5">Bairro</th><th class="p-3.5 text-center text-blue-700">Total</th><th class="p-3.5 text-center text-amber-600">Abertos</th><th class="p-3.5 text-center text-rose-600">Garantia</th><th class="p-3.5 text-center text-emerald-600">Resolvidos</th><th class="p-3.5 text-center text-slate-500">Outros</th></tr></thead>
+                    <thead><tr class="bg-white border-b text-[10px] font-black uppercase"><th class="p-3.5">Bairro</th><th class="p-3.5 text-center text-blue-700">Total</th><th class="p-3.5 text-center text-amber-600">Abertos</th><th class="p-3.5 text-center text-rose-600">Garantia</th><th class="p-3.5 text-center text-emerald-600">Resolvidos</th><th class="p-3.5 text-center text-slate-500">Atrasados</th></tr></thead>
                     <tbody id="resumo-bairros-body" class="divide-y divide-slate-100 font-bold text-slate-700"></tbody>
                 </table>
             </div>
@@ -52,7 +52,6 @@
     </div>
 
     <script>
-        // Função crucial que remove acentos e formata bairros para não repetir "São José" e "sao jose"
         function sanitizarBairro(nome) {
             if (!nome) return "NÃO INFORMADO";
             return nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
@@ -67,44 +66,64 @@
         };
 
         function processarEstatisticas(data) {
-            let ab = 0, ga = 0, re = 0, ou = 0; let stMap = {}, brMap = {};
+            let stats = { total: 0, abertos: 0, garantia: 0, resolvidos: 0, atrasados: 0 };
+            let stMap = {}, brMap = {};
+
             data.forEach(p => {
-                const st = (p.status || "ABERTO").toUpperCase();
-                const bairroLimpo = sanitizarBairro(p.bairro); // Limpeza de acentos aplicada aqui
                 const dataAtual = new Date();
-                const dataProtocolo = new Date(p.dataHora); // Certifique-se que p.dataHora é a data da criação
-                const diffTime = Math.abs(dataAtual - dataProtocolo);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const dataProtocolo = new Date(p.dataHora);
+                const diffDays = Math.ceil(Math.abs(dataAtual - dataProtocolo) / (1000 * 60 * 60 * 24));
 
-        let statusFinal = p.status.toUpperCase();
-
+                let statusFinal = p.status.toUpperCase();
                 if (statusFinal === "ABERTO" && diffDays > 15) {
-                statusFinal = "ATRASADO";
-            }
+                    statusFinal = "ATRASADO";
+                }
 
-                // Agora use esse statusFinal para contar nas suas estatísticas
-                if (statusFinal === "ATRASADO") stats.atrasados++;
+                const b = sanitizarBairro(p.bairro);
                 
-                if (st === "ABERTO") ab++; else if (st === "GARANTIA") ga++; else if (st === "RESOLVIDO") re++; else ou++;
-                stMap[st] = (stMap[st] || 0) + 1;
+                // Contagem Geral
+                stats.total++;
+                if (statusFinal === "ABERTO") stats.abertos++;
+                else if (statusFinal === "GARANTIA") stats.garantia++;
+                else if (statusFinal === "RESOLVIDO") stats.resolvidos++;
+                else if (statusFinal === "ATRASADO") stats.atrasados++;
+
+                stMap[statusFinal] = (stMap[statusFinal] || 0) + 1;
                 
-                if (!brMap[bairroLimpo]) brMap[bairroLimpo] = { total: 0, ab: 0, ga: 0, re: 0, ou: 0 };
-                brMap[bairroLimpo].total++;
-                if (st === "ABERTO") brMap[bairroLimpo].ab++; else if (st === "GARANTIA") brMap[bairroLimpo].ga++; else if (st === "RESOLVIDO") brMap[bairroLimpo].re++; else brMap[bairroLimpo].ou++;
+                if (!brMap[b]) brMap[b] = { total: 0, ab: 0, ga: 0, re: 0, at: 0 };
+                brMap[b].total++;
+                if (statusFinal === "ABERTO") brMap[b].ab++;
+                else if (statusFinal === "GARANTIA") brMap[b].ga++;
+                else if (statusFinal === "RESOLVIDO") brMap[b].re++;
+                else if (statusFinal === "ATRASADO") brMap[b].at++;
             });
 
-            document.getElementById('card-total').textContent = data.length; document.getElementById('card-abertos').textContent = ab; document.getElementById('card-garantia').textContent = ga; document.getElementById('card-resolvidos').textContent = re; document.getElementById('card-outros').textContent = ou;
+            document.getElementById('card-total').textContent = stats.total;
+            document.getElementById('card-abertos').textContent = stats.abertos;
+            document.getElementById('card-garantia').textContent = stats.garantia;
+            document.getElementById('card-resolvidos').textContent = stats.resolvidos;
+            document.getElementById('card-atrasados').textContent = stats.atrasados;
 
             let arrBairros = Object.entries(brMap).sort((a,b) => b[1].total - a[1].total);
-            let top10 = {}; arrBairros.slice(0, 10).forEach(i => top10[i[0]] = i[1].total);
+            
+            new Chart(document.getElementById('chartStatus').getContext('2d'), 
+                      { type: 'doughnut', data: { labels: Object.keys(stMap), datasets: [
+                          { data: Object.values(stMap), backgroundColor: ['#fbbf24','#f43f5e','#34d399','#64748b'] }] }, options: 
+                      { animation: false } });
+            new Chart(document.getElementById('chartBairros').getContext('2d'), { type: 'bar', data: 
+            { labels: arrBairros.slice(0,10).map(i=>i[0]), datasets: [{ data: arrBairros.slice(0,10).map(i=>i[1].total), backgroundColor: '#3b82f6' }] }, options: 
+            { animation: false, plugins: { legend: { display: false } 
+                } } 
+                     });
 
-            new Chart(document.getElementById('chartStatus').getContext('2d'), { type: 'doughnut', data: { labels: Object.keys(stMap), datasets: [{ data: Object.values(stMap), backgroundColor: ['#fbbf24','#f43f5e','#34d399','#60a5fa'] }] }, options: { animation: false } });
-            new Chart(document.getElementById('chartBairros').getContext('2d'), { type: 'bar', data: { labels: Object.keys(top10), datasets: [{ data: Object.values(top10), backgroundColor: '#3b82f6' }] }, options: { animation: false, plugins: { legend: { display: false } } } });
-
-            document.getElementById('resumo-bairros-body').innerHTML = arrBairros.map(([b, s]) => `<tr><td class="p-3.5 tracking-wide">${b}</td><td class="p-3.5 text-center text-blue-700 font-black">${s.total}</td><td class="p-3.5 text-center">${s.ab||'-'}</td><td class="p-3.5 text-center">${s.ga||'-'}</td><td class="p-3.5 text-center">${s.re||'-'}</td><td class="p-3.5 text-center">${s.ou||'-'}</td></tr>`).join('');
+            document.getElementById('resumo-bairros-body').innerHTML = arrBairros.map(([b, s]) => `<tr>
+            <td class="p-3.5 tracking-wide">${b}</td><td class="p-3.5 text-center text-blue-700 font-black">${s.total}
+            </td><td class="p-3.5 text-center">${s.ab||'-'}</td><td class="p-3.5 text-center">${s.ga||'-'}</td>
+            <td class="p-3.5 text-center">${s.re||'-'}</td><td class="p-3.5 text-center">${s.at||'-'}</td></tr>`).join('');
         }
 
-        function gerarPDF() { html2pdf().set({ margin: 10, filename: `Dashboard_SERIPM.pdf`, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('pdf-container')).save(); }
+        function gerarPDF() { html2pdf().set({ margin: 10, filename: `Dashboard_SERIPM.pdf`, jsPDF: 
+        { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('pdf-container')).save(); }
     </script>
 </body>
 </html>
