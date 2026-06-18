@@ -9,48 +9,256 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
+        /* Esconde a barra de rolagem mas permite o scroll */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Estilização para linhas expandidas na tabela */
         tr.expanded-row { background-color: #f8fafc; }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased">
 
     <script>
+        // Variáveis globais de sessão e interface
+        let currentUser = "";
+        let currentRole = "";
+        let userAllowedTabs = [];
+        const ALL_TABS = ["ENTRADA", "ADMINISTRATIVO", "SUPERVISOR", "USUÁRIOS"];
+
+        // Verifica a sessão ativa ao carregar a página
         window.onload = () => {
             const savedUser = localStorage.getItem('seripm_user');
             if (savedUser) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('user-name').textContent = savedUser;
-                document.getElementById('user-role').textContent = "Perfil: " + localStorage.getItem('seripm_role');
+                currentUser = savedUser;
+                currentRole = localStorage.getItem('seripm_role');
+                userAllowedTabs = localStorage.getItem('seripm_tabs').split(',');
+                carregarDashboard();
             }
         };
 
-        async function fazerLogin() {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
-
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'login', user: u, pass: p })
-            }).then(r => r.json());
-
-            if (res.success) {
-                localStorage.setItem('seripm_user', u);
-                localStorage.setItem('seripm_role', res.role);
-                location.reload();
-            } else {
-                alert("Erro de autenticação!");
-            }
+        // Transição de tela para o painel principal e configuração inicial
+        function carregarDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('user-name').textContent = currentUser;
+            document.getElementById('user-role').textContent = "Perfil: " + currentRole;
+            buildTabMenu();
         }
 
+        // Encerra a sessão e recarrega a página
         function logout() {
             localStorage.clear();
             location.reload();
         }
-        // COLOQUE SUA URL AQUI
+
+        // Endpoint da API no Google Apps Script
         const API_URL = "https://script.google.com/macros/s/AKfycbypRWWMMAI8QC_jWHHAw-B1xklBIY9deSazulRC_rkZM3u65RiHMpQl6yG0xAXm8hQx/exec"; 
+
+        // Função central de comunicação com a API (Correção de CORS aplicada aqui)
+        async function fetchAPI(payload) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        // O uso de text/plain evita o bloqueio preflight (CORS) no Apps Script
+                        'Content-Type': 'text/plain;charset=utf-8' 
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error("Erro de comunicação com a API:", error);
+                return { success: false, error: "Falha na comunicação com o servidor." };
+            }
+        }
+
+        // Autenticação de usuário e controle do botão de login
+        async function handleLogin(event) {
+            event.preventDefault(); 
+            
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const btn = document.getElementById('btn-login');
+            
+            const txtOriginal = btn.textContent;
+            btn.textContent = "Autenticando...";
+            btn.disabled = true;
+
+            const res = await fetchAPI({ action: "login", username: user, password: pass });
+            
+            if (res && res.success) {
+                localStorage.setItem('seripm_user', res.userData ? res.userData.username : user);
+                localStorage.setItem('seripm_role', res.userData ? res.userData.role : 'ATENDENTE');
+                localStorage.setItem('seripm_tabs', res.userData ? res.userData.tabs : 'ENTRADA');
+                
+                currentUser = localStorage.getItem('seripm_user');
+                currentRole = localStorage.getItem('seripm_role');
+                userAllowedTabs = localStorage.getItem('seripm_tabs').split(',');
+                
+                carregarDashboard();
+            } else {
+                alert(res?.error || "Acesso negado. Credenciais inválidas.");
+            }
+            
+            btn.textContent = txtOriginal;
+            btn.disabled = false;
+        }
+
+        // Constrói o menu de abas baseado nas permissões do usuário logado
+        function buildTabMenu() {
+            const menu = document.getElementById('tab-menu');
+            menu.innerHTML = "";
+            userAllowedTabs.forEach(tab => {
+                if (ALL_TABS.includes(tab)) {
+                    const btn = document.createElement('button');
+                    btn.className = "px-4 py-2 text-xs font-black uppercase rounded-t-lg transition whitespace-nowrap bg-slate-200 text-slate-500 hover:bg-slate-300";
+                    btn.textContent = tab;
+                    btn.onclick = () => loadTab(tab);
+                    menu.appendChild(btn);
+                }
+            });
+            if (userAllowedTabs.length > 0) loadTab(userAllowedTabs[0]);
+        }
+
+        // Alterna entre as abas e carrega os dados correspondentes
+        function loadTab(tabName) {
+            if (tabName === "USUÁRIOS") {
+                document.getElementById('main-data-card').classList.add('hidden');
+                document.getElementById('control-bar').classList.add('hidden');
+                document.getElementById('stats-container').classList.add('hidden');
+                document.getElementById('user-management-card').classList.remove('hidden');
+                loadUsers();
+            } else {
+                document.getElementById('user-management-card').classList.add('hidden');
+                document.getElementById('main-data-card').classList.remove('hidden');
+                document.getElementById('control-bar').classList.remove('hidden');
+                document.getElementById('stats-container').classList.remove('hidden');
+                loadData(tabName);
+            }
+        }
+
+        // Exibe modais genéricos
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // Oculta modais genéricos
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Filtra a tabela principal baseada no campo de busca
+        function filterTable() {
+            const input = document.getElementById("search-input").value.toUpperCase();
+            const trs = document.getElementById("table-body").getElementsByTagName("tr");
+            for (let i = 0; i < trs.length; i++) {
+                const text = trs[i].innerText.toUpperCase();
+                trs[i].style.display = text.indexOf(input) > -1 ? "" : "none";
+            }
+        }
+
+        // Submete um novo chamado para a API
+        async function submitProtocolo(event) {
+            event.preventDefault();
+            const payload = {
+                action: "novoChamado",
+                username: currentUser,
+                data: {
+                    solicitante: document.getElementById('np-solicitante').value,
+                    cpf: document.getElementById('np-cpf').value,
+                    endereco: document.getElementById('np-endereco').value,
+                    telefone: document.getElementById('np-telefone').value,
+                    bairro: document.getElementById('np-bairro').value,
+                    referencia: document.getElementById('np-ref').value,
+                    servico: document.getElementById('np-solicitacao').value,
+                    detalhes: document.getElementById('np-detalhes').value,
+                    observacoes: document.getElementById('np-obs').value
+                }
+            };
+            const res = await fetchAPI(payload);
+            if (res.success) {
+                closeModal('modal-novo');
+                alert("Chamado registrado com sucesso.");
+                loadTab(userAllowedTabs[0]); // Recarrega a aba inicial
+            } else {
+                alert("Erro ao registrar: " + res.error);
+            }
+        }
+
+        // (Placeholder) Carrega e renderiza os dados da aba selecionada
+        async function loadData(tabName) {
+            // Requisita os dados da aba
+            const res = await fetchAPI({ action: "getData", tab: tabName, username: currentUser });
+            if(res.success) {
+                // Atualizar tabela #table-body e #stats-container
+            }
+        }
+
+        // (Placeholder) Gera relatório a partir da tabela atual
+        function gerarRelatorioJanela() {
+            window.open('Relatório.html', '_blank');
+        }
+
+        // (Placeholder) Carrega a lista de usuários no painel de gerência
+        async function loadUsers() {
+            const res = await fetchAPI({ action: "getUsers", username: currentUser });
+            if(res.success) {
+               // Renderizar trs em #user-table-body
+            }
+        }
+
+        // Constrói os checkboxes dinâmicos para controle de acesso do usuário
+        function buildCheckboxes(checkedStr) {
+            const c = document.getElementById('permissions-container'); 
+            if(c) {
+                c.innerHTML = "";
+                const arr = checkedStr ? checkedStr.split(',') : [];
+                ALL_TABS.forEach(t => { 
+                    if(t !== "USUÁRIOS") {
+                        c.innerHTML += `<label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="${t}" class="chk-tab" ${arr.includes(t)?'checked':''}> ${t}</label>`; 
+                    }
+                });
+            }
+        }
+
+        // Abre modal para criar usuário vazio
+        function openUserModal() { 
+            document.getElementById('mu-username').value = ""; 
+            document.getElementById('mu-username').disabled = false; 
+            buildCheckboxes(""); 
+            openModal('modal-usuario'); 
+        }
+
+        // Preenche e abre modal para edição de usuário
+        function editUser(user, pass, role, tabs) { 
+            document.getElementById('mu-username').value = user; 
+            document.getElementById('mu-username').disabled = true; 
+            document.getElementById('mu-password').value = pass; 
+            document.getElementById('mu-role').value = role; 
+            buildCheckboxes(tabs); 
+            openModal('modal-usuario'); 
+        }
+
+        // Submete os dados de criação ou edição de usuário
+        async function submitUser(e) {
+            e.preventDefault();
+            const chk = Array.from(document.querySelectorAll('.chk-tab:checked')).map(el => el.value).join(',');
+            await fetchAPI({ 
+                action: "saveUser", 
+                username: currentUser, 
+                role: currentRole, 
+                userData: { 
+                    username: document.getElementById('mu-username').value, 
+                    password: document.getElementById('mu-password').value, 
+                    role: document.getElementById('mu-role').value, 
+                    tabs: chk 
+                } 
+            });
+            closeModal('modal-usuario'); 
+            loadUsers();
+        }
     </script>
 
     <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-120%] opacity-0 bg-white shadow-2xl rounded-2xl p-4 flex items-center gap-3 border-l-4">
@@ -64,9 +272,9 @@
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight">SERIPM MARICÁ</h1>
                 <p class="text-[10px] text-slate-400 font-black tracking-widest uppercase mt-1">Plataforma Operacional</p>
             </div>
-            <form onsubmit="handle(event)" class="space-y-4">
-                <input type="text" id="-user" placeholder="Matrícula / Operador" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold uppercase tracking-wide bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="password" id="-pass" placeholder="Código de Segurança" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <input type="text" id="login-user" placeholder="Matrícula / Operador" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold uppercase tracking-wide bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="login-pass" placeholder="Código de Segurança" required class="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="submit" id="btn-login" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg hover:bg-blue-700 transition">Autenticar Entrada</button>
             </form>
         </div>
@@ -74,15 +282,18 @@
 
     <div id="dashboard" class="hidden min-h-screen flex flex-col">
         <header class="bg-white shadow-sm border-b border-slate-200 px-6 py-4 flex justify-between items-center print:hidden">
-            <div class="flex items-center gap-2"><i class="fa-solid fa-headset text-blue-600 text-lg">
-                
-            </i><h1 class="text-base font-black tracking-tight text-slate-900">SERIPM <span class="text-xs font-normal text-slate-400">v4.0</span></h1></div>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-headset text-blue-600 text-lg"></i>
+                <h1 class="text-base font-black tracking-tight text-slate-900">SERIPM <span class="text-xs font-normal text-slate-400">v4.0</span></h1>
+            </div>
             <div class="flex items-center gap-4">
-                <div class="text-right"><p id="user-name" class="text-xs font-black text-slate-800 uppercase">
-                    
-                </p><p id="user-role" class="text-[9px] text-blue-600 font-black tracking-wider uppercase"></p></div>
+                <div class="text-right">
+                    <p id="user-name" class="text-xs font-black text-slate-800 uppercase"></p>
+                    <p id="user-role" class="text-[9px] text-blue-600 font-black tracking-wider uppercase"></p>
+                </div>
                 <button onclick="logout()" class="text-slate-300 hover:text-red-500 transition">
-                <i class="fa-solid fa-power-off text-base"></i></button>
+                    <i class="fa-solid fa-power-off text-base"></i>
+                </button>
             </div>
         </header>
 
@@ -138,7 +349,16 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
-                        <thead><tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase"><th class="p-3">Operador</th><th class="p-3">Senha</th><th class="p-3">Nível</th><th class="p-3 text-center">Abas Liberadas</th><th class="p-3 text-center">Estado</th><th class="p-3 text-center">Ações</th></tr></thead>
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase">
+                                <th class="p-3">Operador</th>
+                                <th class="p-3">Senha</th>
+                                <th class="p-3">Nível</th>
+                                <th class="p-3 text-center">Abas Liberadas</th>
+                                <th class="p-3 text-center">Estado</th>
+                                <th class="p-3 text-center">Ações</th>
+                            </tr>
+                        </thead>
                         <tbody id="user-table-body" class="divide-y divide-slate-100 font-bold text-slate-700"></tbody>
                     </table>
                 </div>
@@ -148,7 +368,10 @@
 
     <div id="modal-novo" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
         <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden">
-            <div class="p-4 border-b flex justify-between bg-slate-50 items-center"><h3 class="font-black text-slate-800 uppercase text-xs">Novo Chamado</h3><button onclick="closeModal('modal-novo')"><i class="fa-solid fa-xmark text-sm"></i></button></div>
+            <div class="p-4 border-b flex justify-between bg-slate-50 items-center">
+                <h3 class="font-black text-slate-800 uppercase text-xs">Novo Chamado</h3>
+                <button onclick="closeModal('modal-novo')"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
             <form onsubmit="submitProtocolo(event)" class="p-6 space-y-4">
                 <div class="grid grid-cols-3 gap-3">
                     <div class="col-span-2"><label class="block text-[9px] font-black text-slate-500 uppercase">Solicitante</label><input type="text" id="np-solicitante" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
@@ -169,254 +392,45 @@
                     <div class="col-span-2"><label class="block text-[9px] font-black text-slate-500 uppercase">Detalhes Adicionais</label><input type="text" id="np-detalhes" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
                     <div class="col-span-3"><label class="block text-[9px] font-black text-slate-500 uppercase">Observações</label><input type="text" id="np-obs" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
                 </div>
-                <div class="pt-3 flex justify-end gap-2 border-t mt-4"><button type="button" onclick="closeModal('modal-novo')" class="px-4 py-2 border rounded-xl text-xs font-bold">Cancelar</button><button type="submit" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl">Registrar</button></div>
+                <div class="pt-3 flex justify-end gap-2 border-t mt-4">
+                    <button type="button" onclick="closeModal('modal-novo')" class="px-4 py-2 border rounded-xl text-xs font-bold">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl">Registrar</button>
+                </div>
             </form>
         </div>
     </div>
 
     <div id="modal-usuario" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
         <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl">
-            <div class="p-4 border-b bg-slate-50 flex justify-between items-center rounded-t-3xl"><h3 class="font-black text-slate-800 uppercase text-xs" id="user-modal-title">Operador</h3><button onclick="closeModal('modal-usuario')"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="p-4 border-b bg-slate-50 flex justify-between items-center rounded-t-3xl">
+                <h3 class="font-black text-slate-800 uppercase text-xs" id="user-modal-title">Operador</h3>
+                <button onclick="closeModal('modal-usuario')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
             <form onsubmit="submitUser(event)" class="p-5 space-y-4">
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Login</label><input type="text" id="mu-username" required class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50"></div>
                     <div><label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Senha</label><input type="text" id="mu-password" required class="w-full border rounded-xl p-2.5 text-xs font-bold bg-slate-50"></div>
                 </div>
                 <div>
-                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Perfil (Supervisor vê tudo)</label>
-                    <select id="mu-role" required class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold">
-                        <option value="ATENDENTE">ATENDENTE</option><option value="ADMINISTRATIVO">ADMINISTRATIVO</option><option value="SUPERVISOR">SUPERVISOR</option>
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Nível de Acesso</label>
+                    <select id="mu-role" class="w-full border rounded-xl p-2.5 text-xs font-bold uppercase bg-slate-50">
+                        <option value="ATENDENTE">Atendente</option>
+                        <option value="SUPERVISOR">Supervisor</option>
+                        <option value="ADMINISTRADOR">Administrador</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-2">Abas Permitidas (Marque para customizar)</label>
-                    <div id="permissions-container" class="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-600 bg-slate-50 p-3 rounded-xl border">
+                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-2">Permissões de Aba</label>
+                    <div id="permissions-container" class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
                         </div>
                 </div>
-                <div class="pt-3 flex justify-end gap-2 border-t"><button type="button" onclick="closeModal('modal-usuario')" class="px-4 py-2 border rounded-xl text-xs font-bold">Voltar</button><button type="submit" class="px-5 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl">Salvar</button></div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-usuario')" class="px-4 py-2 border rounded-xl text-xs font-bold text-slate-600">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-md hover:bg-blue-700">Salvar Dados</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <div id="modal-exportacao" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
-        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl">
-            <div class="p-4 border-b bg-slate-50 flex justify-between items-center rounded-t-3xl"><h3 class="font-black text-slate-800 uppercase text-xs"><i class="fa-solid fa-file-export text-emerald-600 mr-2"></i>Exportação de Dados</h3><button onclick="closeModal('modal-exportacao')"><i class="fa-solid fa-xmark"></i></button></div>
-            <div class="p-5 space-y-4">
-                <div>
-                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Filtrar por Status (Aba Atual)</label>
-                    <select id="export-status-filter" class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold">
-                        <option value="TODOS">TODOS OS STATUS</option><option value="ABERTO">APENAS ABERTOS</option><option value="GARANTIA">APENAS GARANTIA</option><option value="RESOLVIDO">APENAS RESOLVIDOS</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[9px] font-black text-slate-500 uppercase mb-1">Quantidade Limite</label>
-                    <select id="export-limit" class="w-full border bg-white rounded-xl p-2.5 text-xs font-bold">
-                        <option value="ALL">Exportar Todos Encontrados</option><option value="50">Limitar a 50</option><option value="100">Limitar a 100</option>
-                    </select>
-                </div>
-                <div class="pt-3 flex flex-col gap-2 border-t">
-                    <button onclick="gerarExportacaoExcel()" class="w-full py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl"><i class="fa-solid fa-file-excel mr-2"></i>Gerar Planilha Excel</button>
-                    <button onclick="gerarExportacaoPDF()" class="w-full py-3 bg-rose-600 text-white text-xs font-black uppercase rounded-xl"><i class="fa-solid fa-file-pdf mr-2"></i>Gerar Tabela PDF</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let currentUser = null, currentRole = null, currentTab = "ENTRADA", protocolsData = [], openRows = {}, userAllowedTabs = [];
-        const ALL_TABS = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "SUPERVISOR", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA", "USUÁRIOS"];
-
-        function formatarDataHora(str) {
-            if (!str) return "-";
-            try {
-                let d = new Date(str);
-                if (isNaN(d.getTime())) return str.toString().split(".")[0];
-                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-            } catch (e) { return str; }
-        }
-
-        function showToast(msg, type) {
-            const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = msg;
-            document.getElementById('toast-icon').innerHTML = type==='success'?'<i class="fa-solid fa-circle-check text-green-500"></i>':'<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
-            t.className = `fixed top-5 right-5 z-50 transform transition-all duration-300 bg-white shadow-2xl rounded-2xl p-4 flex items-center gap-3 border-l-4 ${type==='success'?'border-green-500':'border-red-500'}`;
-            setTimeout(() => t.classList.add('translate-y-[-120%]', 'opacity-0'), 3000);
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        async function fetchAPI(payload) {
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                // O uso de text/plain é obrigatório para evitar o bloqueio de CORS no Google Apps Script
-                'Content-Type': 'text/plain;charset=utf-8' 
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error("Erro de comunicação com a API (Possível CORS ou falha no servidor):", error);
-        return { success: false, error: "Falha na comunicação com o servidor. Verifique o console." };
-    }
-}
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-login'); btn.textContent = "Verificando..."; btn.disabled = true;
-            const res = await fetchAPI({ action: "login", username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value });
-            if (res.success) {
-    currentUser = res.username; 
-    currentRole = res.role;
-    userAllowedTabs = res.allowedTabs ? res.allowedTabs.split(',') : [];
-    
-    // PERSISTÊNCIA: Salva no localStorage
-    localStorage.setItem('seripm_user', currentUser);
-    localStorage.setItem('seripm_role', currentRole);
-    localStorage.setItem('seripm_tabs', res.allowedTabs);
-
-    carregarDashboard(); // Nova função abaixo
-}
-
-        function logout() { location.reload(); }
-
-        function buildTabMenu() {
-            const container = document.getElementById('tab-menu'); container.innerHTML = ""; openRows = {};
-            let allowedTabs = [];
-            if (userAllowedTabs.length > 0 && currentRole !== "SUPERVISOR") allowedTabs = userAllowedTabs;
-            else if (currentRole === "ATENDENTE") allowedTabs = ["ENTRADA"];
-            else if (currentRole === "ADMINISTRATIVO") allowedTabs = ["ENTRADA", "URGENTE/ATRASADO", "ADMINISTRATIVO", "COM FUNCIONÁRIO", "IMPLANTAÇÃO", "OBRA", "TELECOM", "GARANTIA"];
-            else allowedTabs = ALL_TABS;
-
-            currentTab = allowedTabs[0] || "ENTRADA";
-
-            allowedTabs.forEach(tab => {
-                let btn = document.createElement("button"); btn.id = `btn-tab-${allowedTabs.indexOf(tab)}`;
-                btn.className = `tab-btn px-4 py-2 text-xs font-black uppercase rounded-t-xl transition whitespace-nowrap ${tab === currentTab ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`;
-                btn.textContent = tab; btn.onclick = () => switchTab(tab, btn.id); container.appendChild(btn);
-            });
-            executeLoad();
-        }
-
-        function switchTab(tabName, btnId) {
-            currentTab = tabName;
-            document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('bg-blue-600', 'text-white'); b.classList.add('bg-slate-200', 'text-slate-500'); });
-            document.getElementById(btnId).classList.remove('bg-slate-200', 'text-slate-500'); document.getElementById(btnId).classList.add('bg-blue-600', 'text-white');
-            executeLoad();
-        }
-
-        function executeLoad() {
-            if (currentTab === "USUÁRIOS") {
-                document.getElementById('main-data-card').classList.add('hidden'); document.getElementById('control-bar').classList.add('hidden'); document.getElementById('stats-container').classList.add('hidden'); document.getElementById('user-management-card').classList.remove('hidden');
-                loadUsers();
-            } else {
-                document.getElementById('user-management-card').classList.add('hidden'); document.getElementById('main-data-card').classList.remove('hidden'); document.getElementById('control-bar').classList.remove('hidden'); document.getElementById('stats-container').classList.remove('hidden');
-                loadProtocols();
-            }
-        }
-
-        async function loadProtocols() {
-            const tbody = document.getElementById('table-body'); tbody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i> Atualizando...</td></tr>`;
-            const res = await fetchAPI({ action: "getProtocols", username: currentUser, role: currentRole, tab: currentTab });
-            if (res.success) { protocolsData = res.data; calcularCardsDaAba(); renderTable(protocolsData); }
-        }
-
-        function calcularCardsDaAba() {
-            let ab = 0, gar = 0, res = 0, out = 0;
-            protocolsData.forEach(p => {
-                const st = (p.status||"").toUpperCase();
-                if(st==="ABERTO") ab++; else if(st==="GARANTIA") gar++; else if(st==="RESOLVIDO" || st==="CONCLUÍDO") res++; else out++;
-            });
-            document.getElementById('stat-total').textContent = protocolsData.length;
-            document.getElementById('stat-abertos').textContent = ab; document.getElementById('stat-garantia').textContent = gar;
-            document.getElementById('stat-resolvidos').textContent = res; document.getElementById('stat-outros').textContent = out;
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('table-body');
-            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center p-6 font-bold text-slate-400">Vazio.</td></tr>`; return; }
-            let html = "";
-            data.forEach(p => {
-                let badge = "bg-slate-100"; const st = (p.status||"").toUpperCase();
-                if(st==="ABERTO") badge = "bg-amber-100 text-amber-700"; else if(st==="GARANTIA") badge = "bg-rose-100 text-rose-700"; else if(st==="RESOLVIDO") badge = "bg-emerald-100 text-emerald-700";
-                let exp = openRows[p.protocolo] ? "" : "hidden"; let ico = openRows[p.protocolo] ? "fa-eye-slash text-red-500" : "fa-eye text-blue-600";
-                html += `<tr class="hover:bg-slate-50"><td class="p-3 text-center print:hidden"><button onclick="toggleRow('${p.protocolo}')"><i class="fa-solid ${ico}"></i></button></td><td class="p-3 font-semibold text-slate-500">${formatarDataHora(p.dataHora)}</td><td class="p-3 font-black tracking-wide">${p.protocolo}</td><td class="p-3">${p.atendente}</td><td class="p-3 font-bold uppercase">${p.solicitante}</td><td class="p-3 uppercase">${p.bairro}</td><td class="p-3 text-center"><select onchange="changeStatus('${p.protocolo}', this.value)" class="text-[9px] font-black uppercase rounded border p-1 outline-none ${badge}"><option value="${st}" selected disabled>${st}</option><option value="ABERTO">ABERTO</option><option value="RESOLVIDO">RESOLVIDO</option><option value="GARANTIA">GARANTIA</option><option value="TELECOM">TELECOM</option><option value="OBRA">OBRA</option></select></td></tr>
-                <tr class="${exp} bg-slate-50"><td colspan="7" class="p-4 border-l-4 border-blue-600"><div class="grid grid-cols-3 gap-4 text-xs font-bold"><div class="bg-white p-3 border rounded">Local: ${p.bairro} - ${p.endereco}</div><div class="bg-white p-3 border rounded">Contato: ${p.telefone} / ${p.cpf}</div><div class="bg-white p-3 border rounded">Serviço: ${p.solicitacao}<br><span class="text-[10px] text-blue-600">${p.obs||'-'}</span></div></div></td></tr>`;
-            });
-            tbody.innerHTML = html;
-        }
-
-        function toggleRow(id) { openRows[id] = !openRows[id]; renderTable(protocolsData); }
-        function filterTable() { const v = document.getElementById('search-input').value.toLowerCase(); renderTable(protocolsData.filter(p => (p.protocolo||'').toLowerCase().includes(v) || (p.bairro||'').toLowerCase().includes(v))); }
-
-        async function submitProtocolo(e) {
-            e.preventDefault();
-            const res = await fetchAPI({ action: "createProtocol", username: currentUser, tab: currentTab, data: { solicitante: document.getElementById('np-solicitante').value, cpf: document.getElementById('np-cpf').value, telefone: document.getElementById('np-telefone').value, endereco: document.getElementById('np-endereco').value, bairro: document.getElementById('np-bairro').value, referencia: document.getElementById('np-ref').value, solicitacao: document.getElementById('np-solicitacao').value, detalhes: document.getElementById('np-detalhes').value, obs: document.getElementById('np-obs').value } });
-            if (res.success) { showToast("Protocolo Criado: " + res.protocolo, "success"); closeModal('modal-novo'); loadProtocols(); }
-        }
-
-        async function changeStatus(id, nSt) { if(confirm(`Mover protocolo ${id} para ${nSt}?`)) { await fetchAPI({action:"updateStatus", username:currentUser, protocolId:id, newStatus:nSt, tab:currentTab}); loadProtocols(); } }
-
-        function gerarRelatorioJanela() {
-            sessionStorage.setItem('seripm_report_data', JSON.stringify(protocolsData)); sessionStorage.setItem('seripm_report_tab', currentTab);
-            window.open('relatorio.html', '_blank');
-        }
-
-        // ================= EXPORTAÇÃO AVANÇADA (EXCEL / PDF) =================
-        function gerarExportacaoExcel() {
-            const st = document.getElementById('export-status-filter').value; const lim = document.getElementById('export-limit').value;
-            let d = protocolsData; if(st !== "TODOS") d = d.filter(p => (p.status||"").toUpperCase() === st);
-            if(lim !== "ALL") d = d.slice(0, parseInt(lim));
-            if(d.length === 0) return alert("Nenhum dado encontrado com este filtro.");
-            
-            const ws = XLSX.utils.json_to_sheet(d); const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Protocolos");
-            XLSX.writeFile(wb, `Planilha_SERIPM_${currentTab}_${st}.xlsx`);
-            closeModal('modal-exportacao');
-        }
-
-        function gerarExportacaoPDF() {
-            const st = document.getElementById('export-status-filter').value; const lim = document.getElementById('export-limit').value;
-            let d = protocolsData; if(st !== "TODOS") d = d.filter(p => (p.status||"").toUpperCase() === st);
-            if(lim !== "ALL") d = d.slice(0, parseInt(lim));
-            if(d.length === 0) return alert("Nenhum dado encontrado com este filtro.");
-
-            // Cria tabela temporária para o PDF
-            const div = document.createElement('div');
-            div.innerHTML = `<h2 style="font-family:sans-serif; text-align:center;">Relatório de Exportação - Aba ${currentTab}</h2><table style="width:100%; border-collapse:collapse; font-family:sans-serif; font-size:10px;" border="1"><thead><tr style="background:#f1f5f9;"><th>Protocolo</th><th>Data</th><th>Bairro</th><th>Solicitante</th><th>Status</th></tr></thead><tbody>` + 
-            d.map(p => `<tr><td>${p.protocolo}</td><td>${formatarDataHora(p.dataHora)}</td><td>${p.bairro}</td><td>${p.solicitante}</td><td>${p.status}</td></tr>`).join('') + `</tbody></table>`;
-            
-            html2pdf().set({ margin: 10, filename: `PDF_SERIPM_${currentTab}_${st}.pdf`, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } }).from(div).save();
-            closeModal('modal-exportacao');
-        }
-
-        // ================= GESTÃO DE USUÁRIOS E PERMISSÕES =================
-        async function loadUsers() {
-            const tbody = document.getElementById('user-table-body');
-            const res = await fetchAPI({ action: "getUsers", username: currentUser, role: currentRole });
-            if (res.success) {
-                tbody.innerHTML = res.data.map(u => `<tr class="hover:bg-slate-50"><td class="p-3">${u.username}</td><td class="p-3">${u.password}</td><td class="p-3 text-[10px]">${u.role}</td><td class="p-3 text-[9px] truncate max-w-xs">${u.tabs||'PADRÃO'}</td><td class="p-3">${u.status}</td><td class="p-3"><button onclick="editUser('${u.username}','${u.password}','${u.role}','${u.tabs}')" class="p-1 border rounded mr-1"><i class="fa-solid fa-pen"></i></button></td></tr>`).join('');
-            }
-        }
-        
-        function buildCheckboxes(checkedStr) {
-            const c = document.getElementById('permissions-container'); c.innerHTML = "";
-            const arr = checkedStr ? checkedStr.split(',') : [];
-            ALL_TABS.forEach(t => { if(t!=="USUÁRIOS") c.innerHTML += `<label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" value="${t}" class="chk-tab" ${arr.includes(t)?'checked':''}> ${t}</label>`; });
-        }
-
-        function openUserModal() { document.getElementById('mu-username').value = ""; document.getElementById('mu-username').disabled = false; buildCheckboxes(""); openModal('modal-usuario'); }
-        function editUser(user, pass, role, tabs) { document.getElementById('mu-username').value = user; document.getElementById('mu-username').disabled = true; document.getElementById('mu-password').value = pass; document.getElementById('mu-role').value = role; buildCheckboxes(tabs); openModal('modal-usuario'); }
-
-        async function submitUser(e) {
-            e.preventDefault();
-            const chk = Array.from(document.querySelectorAll('.chk-tab:checked')).map(el => el.value).join(',');
-            await fetchAPI({ action: "saveUser", username: currentUser, role: currentRole, userData: { username: document.getElementById('mu-username').value, password: document.getElementById('mu-password').value, role: document.getElementById('mu-role').value, tabs: chk } });
-            closeModal('modal-usuario'); loadUsers();
-        }
-    </script>
 </body>
 </html>
