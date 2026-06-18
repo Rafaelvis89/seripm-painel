@@ -1,139 +1,100 @@
-/**
- * SISTEMA INTEGRADO SERIPM 2026 - BACK-END API + AUTOMATION
- * Versão de Segurança: Controle de Acesso por Perfil e Permissão de Abas
- */
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel SERIPM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-100 font-sans">
 
-function onEdit(e) {
-  if (!e) return;
-  const ss = e.source;
-  const range = e.range;
-  const sheet = range.getSheet();
-  const sheetName = sheet.getName();
-  const row = range.getRow();
-  const col = range.getColumn();
-  let valor = range.getValue();
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm">
+            <h1 class="text-xl font-black text-center mb-6">LOGIN SERIPM</h1>
+            <form id="login-form" class="space-y-4">
+                <input type="text" id="user" placeholder="Usuário" class="w-full border rounded-xl p-3">
+                <input type="password" id="pass" placeholder="Senha" class="w-full border rounded-xl p-3">
+                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold">ENTRAR</button>
+            </form>
+        </div>
+    </div>
 
-  if (row <= 1 || !valor || ["SUPERVISOR", "USUARIOS", "USUÁRIOS"].includes(sheetName)) return;
+    <div id="dashboard" class="hidden min-h-screen flex flex-col">
+        <nav class="bg-white p-4 shadow-sm flex justify-between items-center">
+            <div id="tab-menu" class="flex gap-2"></div>
+            <button onclick="logout()" class="text-red-500 font-bold text-sm">SAIR</button>
+        </nav>
+        <main id="main-content" class="p-6">
+            <table class="w-full bg-white rounded-xl shadow overflow-hidden">
+                <thead class="bg-slate-50 text-[10px] uppercase">
+                    <tr><th class="p-3">Data</th><th class="p-3">Protocolo</th><th class="p-3">Solicitante</th><th class="p-3">Status</th></tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </main>
+    </div>
 
-  // Formatação Automática
-  if (col === 7) {
-    let cpf = valor.toString().replace(/\D/g, "").padStart(11, '0').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-    range.setNumberFormat("@").setValue(cpf);
-  } else if (col === 8) {
-    let tel = valor.toString().replace(/\D/g, "");
-    range.setNumberFormat("@");
-    if (tel.length === 11) range.setValue(tel.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3"));
-    else if (tel.length === 10) range.setValue(tel.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3"));
-  } else if (typeof valor === 'string') {
-    range.setValue(valor.toUpperCase());
-  }
+    <script>
+        const API = "https://script.google.com/macros/s/AKfycbypRWWMMAI8QC_jWHHAw-B1xklBIY9deSazulRC_rkZM3u65RiHMpQl6yG0xAXm8hQx/exec";
+        
+        async function fetchAPI(payload) {
+            payload.username = localStorage.getItem('seripm_user');
+            payload.role = localStorage.getItem('seripm_role');
+            payload.allowedTabs = localStorage.getItem('seripm_allowedTabs');
+            const res = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
+            return await res.json();
+        }
 
-  // Sincronização e Gatilhos
-  if (sheetName === "ENTRADA") {
-    if (col === 6 && sheet.getRange(row, 2).getValue() === "") {
-      const agora = new Date();
-      sheet.getRange(row, 1).setValue(Utilities.formatDate(agora, "GMT-3", "dd/MM/yyyy HH:mm:ss"));
-      sheet.getRange(row, 2).setValue(Utilities.formatDate(agora, "GMT-3", "yyyyMMdd") + "-" + (row - 1).toString().padStart(3, '0'));
-      if (sheet.getRange(row, 12).getValue() === "") sheet.getRange(row, 12).setValue("ABERTO");
-    }
-  }
-}
+        function renderMenu() {
+            const menu = document.getElementById('tab-menu');
+            const role = localStorage.getItem('seripm_role');
+            const allowed = localStorage.getItem('seripm_allowedTabs').split(',');
+            
+            const abas = ["ENTRADA", "ADMINISTRATIVO", "SUPERVISOR COM FUNCIONÁRIO", "IMPLANTAÇÃO", "GARANTIA", "RELATÓRIO ESTATÍSTICO"];
+            
+            abas.forEach(aba => {
+                if (role === "SUPERVISOR" || allowed.includes(aba)) {
+                    menu.innerHTML += `<button onclick="carregarAba('${aba}')" class="px-4 py-2 bg-blue-100 rounded-lg text-xs font-bold">${aba}</button>`;
+                }
+            });
+        }
 
-function doPost(e) {
-  try {
-    const payload = JSON.parse(e.postData.contents);
-    switch(payload.action) {
-      case "login": return processLogin(payload.username, payload.password);
-      case "getProtocols": return getProtocols(payload);
-      case "createProtocol": return createProtocol(payload);
-      case "updateStatus": return updateStatus(payload);
-      case "getUsers": return getUsers(payload);
-      case "saveUser": return saveUser(payload);
-      default: return responseJson({ success: false, error: "Ação inválida." });
-    }
-  } catch (err) { return responseJson({ success: false, error: err.toString() }); }
-}
+        async function carregarAba(aba) {
+            const res = await fetchAPI({ action: "getProtocols", tab: aba });
+            if (res.success) {
+                const tbody = document.getElementById('table-body');
+                tbody.innerHTML = res.data.map(item => `
+                    <tr class="border-b text-xs text-center">
+                        <td class="p-3">${item.dataHora}</td>
+                        <td class="p-3">${item.protocolo}</td>
+                        <td class="p-3">${item.solicitante}</td>
+                        <td class="p-3">${item.status}</td>
+                    </tr>
+                `).join('');
+            }
+        }
 
-function responseJson(data) {
-  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
-}
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetchAPI({ action: "login", username: document.getElementById('user').value, password: document.getElementById('pass').value });
+            if (res.success) {
+                localStorage.setItem('seripm_user', res.username);
+                localStorage.setItem('seripm_role', res.role);
+                localStorage.setItem('seripm_allowedTabs', res.allowedTabs);
+                location.reload();
+            } else alert(res.error);
+        };
 
-function processLogin(user, pass) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("USUARIOS") || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("USUÁRIOS");
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().trim().toUpperCase() === user.toString().trim().toUpperCase() && data[i][1].toString() === pass.toString()) {
-      if ((data[i][3] || "").toString().toUpperCase() === "INATIVO") return responseJson({ success: false, error: "Usuário inativo." });
-      return responseJson({ success: true, username: data[i][0], role: data[i][2].toString().toUpperCase(), allowedTabs: (data[i][4] || "").toString() });
-    }
-  }
-  return responseJson({ success: false, error: "Credenciais inválidas." });
-}
+        function logout() { localStorage.clear(); location.reload(); }
 
-function getProtocols(p) {
-  // Validação de segurança para não-supervisores
-  if (p.role !== "SUPERVISOR") {
-    if (p.tab === "OBRA") return responseJson({ success: false, error: "Acesso negado." });
-    const allowed = p.allowedTabs.split(',');
-    if (!allowed.includes(p.tab)) return responseJson({ success: false, error: "Acesso negado à aba." });
-  }
-
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(p.tab);
-  if (!sheet) return responseJson({ success: false, error: "Aba não encontrada." });
-  
-  const data = sheet.getDataRange().getValues();
-  let results = [];
-  for (let i = 1; i < data.length; i++) {
-    if (p.role === "ATENDENTE" && data[i][2].toString().toUpperCase() !== p.username.toString().toUpperCase()) continue;
-    results.push({ dataHora: data[i][0], protocolo: data[i][1], atendente: data[i][2], solicitante: data[i][5], status: data[i][11], bairro: data[i][8] });
-  }
-  return responseJson({ success: true, data: results.reverse() });
-}
-
-function createProtocol(p) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(p.tab);
-  if (!sheet) return responseJson({ success: false, error: "Aba inválida" });
-  
-  const agora = new Date();
-  const prefixo = (p.tab === "OBRA") ? "OBRA-" : "";
-  const proto = prefixo + Utilities.formatDate(agora, "GMT-3", "yyyyMMdd") + "-" + (sheet.getLastRow()).toString().padStart(3, '0');
-  
-  sheet.appendRow([Utilities.formatDate(agora, "GMT-3", "dd/MM/yyyy HH:mm:ss"), proto, p.username.toUpperCase(), p.data.endereco, p.data.referencia, p.data.solicitante, p.data.cpf, p.data.telefone, p.data.bairro, p.data.servico, p.data.detalhes, "ABERTO", p.data.observacoes]);
-  return responseJson({ success: true, protocolo: proto });
-}
-
-function updateStatus(p) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(p.tab);
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][1] === p.protocolId) {
-      sheet.getRange(i + 1, 12).setValue(p.newStatus.toUpperCase());
-      return responseJson({ success: true });
-    }
-  }
-  return responseJson({ success: false, error: "Protocolo não achado" });
-}
-
-function getUserSheet() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("USUARIOS") || SpreadsheetApp.getActiveSpreadsheet().getSheetByName("USUÁRIOS"); }
-
-function getUsers(p) {
-  if (p.role !== "SUPERVISOR") return responseJson({ success: false, error: "Acesso negado" });
-  const data = getUserSheet().getDataRange().getValues();
-  return responseJson({ success: true, data: data.slice(1).map(r => ({ username: r[0], role: r[2], status: r[3], tabs: r[4] })) });
-}
-
-function saveUser(p) {
-  if (p.role !== "SUPERVISOR") return responseJson({ success: false, error: "Acesso negado" });
-  const sheet = getUserSheet();
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toUpperCase() === p.userData.username.toUpperCase()) {
-      sheet.getRange(i + 1, 2).setValue(p.userData.password);
-      sheet.getRange(i + 1, 3).setValue(p.userData.role);
-      sheet.getRange(i + 1, 5).setValue(p.userData.tabs);
-      return responseJson({ success: true });
-    }
-  }
-  sheet.appendRow([p.userData.username, p.userData.password, p.userData.role, "ATIVO", p.userData.tabs]);
-  return responseJson({ success: true });
-}
+        window.onload = () => {
+            if (localStorage.getItem('seripm_user')) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                renderMenu();
+            }
+        };
+    </script>
+</body>
+</html>
