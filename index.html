@@ -246,9 +246,23 @@
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         async function fetchAPI(payload) {
-            try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); return await res.json(); } 
-            catch (e) { return { success: false, error: "Erro de rede." }; }
-        }
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                // O uso de text/plain é obrigatório para evitar o bloqueio de CORS no Google Apps Script
+                'Content-Type': 'text/plain;charset=utf-8' 
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error("Erro de comunicação com a API (Possível CORS ou falha no servidor):", error);
+        return { success: false, error: "Falha na comunicação com o servidor. Verifique o console." };
+    }
+}
 
         async function handleLogin(e) {
             e.preventDefault();
