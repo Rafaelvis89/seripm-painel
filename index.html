@@ -33,6 +33,7 @@
                 <button onclick="trocarAba('IMPLANTAÇÃO')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Implantação</button>
                 <button onclick="trocarAba('OBRA')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Obra</button>
                 <button onclick="trocarAba('GARANTIA')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Garantia</button>
+                <button onclick="trocarAba('USUÁRIOS')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition border-t border-slate-700 mt-2">Usuários</button>
             </nav>
             <button onclick="logout()" class="text-red-400 hover:text-red-300 mt-auto pt-4 border-t border-slate-700"><i class="fas fa-sign-out-alt mr-2"></i> Sair</button>
         </aside>
@@ -70,36 +71,33 @@
         async function trocarAba(aba) {
             document.getElementById('tab-title').innerText = aba;
             const content = document.getElementById('content-area');
-            content.innerHTML = `<p class="text-slate-500">A processar dados de ${aba}...</p>`;
+            content.innerHTML = `<p class="text-slate-500 animate-pulse">A carregar dados de ${aba}...</p>`;
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Tenta contornar bloqueios iniciais
                     body: JSON.stringify({ 
-                        action: "getProtocols", 
+                        action: aba === 'USUÁRIOS' ? 'getUsers' : 'getProtocols', 
                         tab: aba, 
-                        role: "SUPERVISOR"
+                        role: localStorage.getItem('seripm_role')
                     })
                 });
                 
-                // Nota: como usamos no-cors, não conseguimos ler o JSON diretamente.
-                // Recomendo alterar para o modo padrão se o seu GAS permitir CORS.
-                const result = await (await fetch(API_URL, {method: 'POST', body: JSON.stringify({action: "getProtocols", tab: aba})})).json();
+                const result = await response.json();
 
                 if (result.success) {
                     renderizarTabela(result.data, content);
                 } else {
-                    content.innerHTML = `<p class="text-red-500">Erro: ${result.error || "Dados indisponíveis."}</p>`;
+                    content.innerHTML = `<p class="text-red-500">Erro: ${result.error || "Sem dados disponíveis."}</p>`;
                 }
             } catch (e) {
                 console.error("Erro na API:", e);
-                content.innerHTML = `<p class="text-red-500">Erro de conexão. Verifique se a API está implantada.</p>`;
+                content.innerHTML = `<p class="text-red-500">Erro de conexão com o script. Verifique se o Web App está publicado e com acesso público.</p>`;
             }
         }
 
         function renderizarTabela(dados, container) {
-            if (!dados || dados.length === 0) { container.innerHTML = "<p>Nenhum registo encontrado.</p>"; return; }
+            if (!dados || dados.length === 0) { container.innerHTML = "<p>Nenhum registo encontrado nesta aba.</p>"; return; }
             
             let html = `<table class="w-full text-xs text-left border-collapse"><thead class="bg-slate-800 text-white"><tr>`;
             Object.keys(dados[0]).forEach(k => html += `<th class="px-2 py-2 border">${k}</th>`);
