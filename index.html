@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,8 +16,8 @@
     <div id="login-screen" class="flex items-center justify-center min-h-screen">
         <div class="bg-white p-8 rounded-xl shadow-xl w-96 border border-slate-200">
             <h2 class="text-2xl font-bold text-center mb-6 text-blue-800">SERIPM 2026</h2>
-            <input type="text" id="user" placeholder="Usuário" class="w-full p-3 mb-4 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            <input type="password" id="pass" placeholder="Senha" class="w-full p-3 mb-6 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="text" id="user" placeholder="Utilizador" class="w-full p-3 mb-4 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="password" id="pass" placeholder="Palavra-passe" class="w-full p-3 mb-6 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
             <button onclick="fazerLogin()" class="w-full bg-blue-800 text-white p-3 rounded-lg font-bold hover:bg-blue-900 transition">ENTRAR</button>
         </div>
     </div>
@@ -25,15 +25,8 @@
     <div id="dashboard" class="hidden flex h-screen">
         <aside class="w-64 bg-slate-900 text-white p-6 flex flex-col h-full">
             <h1 class="text-xl font-bold mb-8 border-b border-slate-700 pb-4">SERIPM 2026</h1>
-            <nav class="space-y-2 flex-1 overflow-y-auto no-scrollbar">
-                <button onclick="trocarAba('ENTRADA')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Entrada</button>
-                <button onclick="trocarAba('ADMINISTRATIVO')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Administrativo</button>
-                <button onclick="trocarAba('SUPERVISOR')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Supervisor</button>
-                <button onclick="trocarAba('COM FUNCIONÁRIO')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Com Funcionário</button>
-                <button onclick="trocarAba('IMPLANTAÇÃO')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Implantação</button>
-                <button onclick="trocarAba('OBRA')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Obra</button>
-                <button onclick="trocarAba('GARANTIA')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition">Garantia</button>
-                <button onclick="trocarAba('USUÁRIOS')" class="block w-full text-left p-2 hover:bg-blue-800 rounded transition border-t border-slate-700 mt-2">Usuários</button>
+            <nav id="menu-nav" class="space-y-2 flex-1 overflow-y-auto no-scrollbar">
+                <!-- Botões gerados via script -->
             </nav>
             <button onclick="logout()" class="text-red-400 hover:text-red-300 mt-auto pt-4 border-t border-slate-700"><i class="fas fa-sign-out-alt mr-2"></i> Sair</button>
         </aside>
@@ -51,15 +44,28 @@
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbxNb43bJzS-d5Fz7mtHft3U40Ts86y6POoCPVtMXqKwShOQUXbxBMowjQrFj6jy8BrS/exec";
+        const ALL_TABS = ['ENTRADA', 'ADMINISTRATIVO', 'SUPERVISOR', 'COM FUNCIONÁRIO', 'IMPLANTAÇÃO', 'OBRA', 'GARANTIA', 'USUÁRIOS'];
 
         window.onload = () => {
             const savedUser = localStorage.getItem('seripm_user');
             if (savedUser) {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('display-user').innerText = "Usuário: " + savedUser;
+                document.getElementById('display-user').innerText = "Utilizador: " + savedUser;
+                construirMenu();
             }
         };
+
+        function construirMenu() {
+            const nav = document.getElementById('menu-nav');
+            ALL_TABS.forEach(aba => {
+                const btn = document.createElement('button');
+                btn.className = "block w-full text-left p-2 hover:bg-blue-800 rounded transition";
+                btn.innerText = aba;
+                btn.onclick = () => trocarAba(aba);
+                nav.appendChild(btn);
+            });
+        }
 
         async function fazerLogin() {
             const u = document.getElementById('user').value;
@@ -91,8 +97,7 @@
                     content.innerHTML = `<p class="text-red-500">Erro: ${result.error || "Sem dados disponíveis."}</p>`;
                 }
             } catch (e) {
-                console.error("Erro na API:", e);
-                content.innerHTML = `<p class="text-red-500">Erro de conexão com o script. Verifique se o Web App está publicado e com acesso público.</p>`;
+                content.innerHTML = `<p class="text-red-500">Erro de conexão. Verifique o servidor.</p>`;
             }
         }
 
