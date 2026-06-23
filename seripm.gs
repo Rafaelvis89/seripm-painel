@@ -767,6 +767,9 @@ function getStatusCounts(p) {
     "GARANTIA": 0
   };
 
+  // Contar TOTAL: todas as linhas com dados (excluindo cabeçalho)
+  counts["TOTAL"] = dataEntrada.length - 1;
+
   // Contar ATRASADO da aba "URGENTE/ATRASADO" (se existir)
   if (sheetAtrasado) {
     const dataAtrasado = sheetAtrasado.getDataRange().getValues();
@@ -780,9 +783,7 @@ function getStatusCounts(p) {
     
     if (!status) continue;
     
-    counts["TOTAL"]++;
-    
-    if (status === "ABERTO" || status === "PENDENTE") {
+    if (status === "ABERTO") {
       counts["ABERTO"]++;
     } else if (status === "COM EMPRESA" || status === "ENCAMINHADO AO FUNCIONÁRIO") {
       counts["COM EMPRESA"]++;
