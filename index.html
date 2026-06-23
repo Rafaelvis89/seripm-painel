@@ -446,10 +446,11 @@
         }
 
         // ... BUSCA E CONTROLO DE TELAS ...
-        function iniciarAutoSync(aba) {
-            if(syncTimer) clearInterval(syncTimer);
-            syncTimer = setInterval(() => { if(currentTab === aba) trocarAba(aba, true); }, 15000);
-        }
+        // ❌ REMOVIDO: auto-sync que causava atualizações contínuas
+        // function iniciarAutoSync(aba) {
+        //     if(syncTimer) clearInterval(syncTimer);
+        //     syncTimer = setInterval(() => { if(currentTab === aba) trocarAba(aba, true); }, 15000);
+        // }
 
         async function trocarAba(aba, isSilent = false) {
             if (!aba) return;
@@ -511,7 +512,7 @@
             } catch (e) { console.error(e); }
 
             if(isSilent) setTimeout(() => document.getElementById('sync-indicator').classList.add('hidden'), 1000);
-            else iniciarAutoSync(aba);
+            // else iniciarAutoSync(aba);  // ❌ AUTO-SYNC REMOVIDO - causava atualização a cada 15 segundos
         }
 
         // ==========================================
