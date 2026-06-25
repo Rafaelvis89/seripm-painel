@@ -12,24 +12,31 @@
     <style>
         * { font-family: 'Inter', 'Segoe UI', Roboto, sans-serif; }
         body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; }
+        .protocol-card { transition: all 0.3s ease; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .protocol-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .modal-overlay { backdrop-filter: blur(4px); }
         .btn-status { transition: all 0.2s ease; }
         .btn-status:hover { transform: scale(1.05); }
         
-        /* Custom Scrollbar for Table */
-        .table-container::-webkit-scrollbar { height: 8px; }
-        .table-container::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
-        .table-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        .table-container::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        /* Otimizações da Tabela Responsiva */
+        .grid-header { grid-template-columns: 40px 90px 140px 1fr 1fr 150px 160px; }
+        .grid-row { grid-template-columns: 40px 90px 140px 1fr 1fr 150px 160px; }
+        
+        @media (max-width: 1024px) {
+            .grid-header { display: none; }
+            .grid-row { display: flex; flex-direction: column; gap: 8px; }
+            .action-buttons { justify-content: flex-start; margin-top: 10px; width: 100%; }
+        }
     </style>
 </head>
 <body class="text-gray-100">
 
     <!-- HEADER -->
     <header class="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 sticky top-0 z-50">
-        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Brasão" class="h-10 w-10 object-contain">
+                <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Brasão" class="h-10 w-10 object-contain" onerror="this.src='https://via.placeholder.com/40'">
                 <div>
                     <h1 class="text-xl font-bold text-white">Portal de Execução</h1>
                     <p class="text-xs text-slate-400">SERIPM 2026</p>
@@ -45,8 +52,8 @@
     <div id="telaLogin" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-8">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
-                    <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Perfil" class="w-full h-full object-cover">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden bg-slate-700">
+                    <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Perfil" class="w-full h-full object-cover" onerror="this.style.display='none'">
                 </div>
                 <h2 class="text-3xl font-bold text-white">Portal Empresa</h2>
                 <p class="text-slate-400 mt-2">SERIPM 2026</p>
@@ -75,7 +82,7 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <main id="dashboard" class="hidden w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main id="dashboard" class="hidden max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
         <!-- TOOLBAR: Filtros + Botões de Ação -->
         <div class="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-wrap bg-slate-800 border border-slate-700 rounded-lg p-4">
             <div class="flex-1 min-w-[200px]">
@@ -89,10 +96,10 @@
             <button onclick="carregarProtocolos()" title="Atualizar lista" class="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
                 <i class="fas fa-redo"></i> Atualizar
             </button>
-            <button onclick="gerarPDF()" title="Exportar para PDF" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
+            <button onclick="imprimirFormatado()" title="Exportar para PDF" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
                 <i class="fas fa-file-pdf"></i> PDF
             </button>
-            <button onclick="imprimirProtocolos()" title="Imprimir" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
+            <button onclick="imprimirFormatado()" title="Imprimir" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
                 <i class="fas fa-print"></i> Imprimir
             </button>
             <div class="px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-semibold flex items-center gap-2 whitespace-nowrap">
@@ -105,26 +112,22 @@
             <i class="fas fa-info-circle mr-2"></i> <span id="textoMensagem"></span>
         </div>
 
-        <!-- PROTOCOLS LIST (TABELA RESPONSIVA E ALINHADA) -->
-        <div class="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
-            <div class="table-container overflow-x-auto w-full">
-                <table class="w-full text-left border-collapse whitespace-nowrap min-w-max">
-                    <thead>
-                        <tr class="bg-slate-900 text-slate-300 text-sm font-semibold border-b border-slate-700">
-                            <th class="p-4 text-center w-12"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()" class="w-4 h-4 accent-orange-600 cursor-pointer"></th>
-                            <th class="p-4">Data</th>
-                            <th class="p-4">Protocolo</th>
-                            <th class="p-4">Solicitante</th>
-                            <th class="p-4">Endereço do Problema</th>
-                            <th class="p-4">Bairro</th>
-                            <th class="p-4 text-center w-48">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="protocolosContainer" class="text-sm divide-y divide-slate-700/50">
-                        <!-- Itens da lista gerados dinamicamente -->
-                    </tbody>
-                </table>
+        <!-- TABLE HEADER -->
+        <div class="hidden lg:grid grid-header gap-3 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg mb-3 text-sm font-semibold text-slate-300 items-center">
+            <div class="text-center">
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="w-4 h-4 rounded accent-orange-600 cursor-pointer">
             </div>
+            <div>Data</div>
+            <div>Protocolo</div>
+            <div>Solicitante</div>
+            <div>Endereço</div>
+            <div>Bairro</div>
+            <div class="text-center">Ações</div>
+        </div>
+
+        <!-- PROTOCOLS LIST -->
+        <div id="protocolosContainer" class="space-y-2">
+            <!-- Itens da lista gerados dinamicamente -->
         </div>
     </main>
 
@@ -132,7 +135,7 @@
     <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-50 modal-overlay hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <!-- Header Modal -->
-            <div class="sticky top-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between z-10">
+            <div class="sticky top-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
                 <h2 class="text-2xl font-bold text-white">Detalhes do Protocolo</h2>
                 <button onclick="fecharModal()" class="text-slate-400 hover:text-white transition">
                     <i class="fas fa-times text-2xl"></i>
@@ -202,11 +205,11 @@
                         </div>
                         <div>
                             <p class="text-slate-500 text-sm">Detalhes</p>
-                            <p id="modal_detalhes" class="text-white font-semibold bg-slate-800 rounded p-3 max-h-24 overflow-y-auto whitespace-pre-wrap"></p>
+                            <p id="modal_detalhes" class="text-white font-semibold bg-slate-800 rounded p-3 max-h-24 overflow-y-auto"></p>
                         </div>
                         <div>
                             <p class="text-slate-500 text-sm">Observações</p>
-                            <p id="modal_observacoes" class="text-white font-semibold bg-slate-800 rounded p-3 max-h-24 overflow-y-auto whitespace-pre-wrap"></p>
+                            <p id="modal_observacoes" class="text-white font-semibold bg-slate-800 rounded p-3 max-h-24 overflow-y-auto"></p>
                         </div>
                     </div>
                 </div>
@@ -218,11 +221,9 @@
                         <button onclick="mudarStatus('RESOLVIDO')" class="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 transition text-white font-semibold flex items-center justify-center gap-2 btn-status">
                             <i class="fas fa-check-circle"></i> Marcar como Resolvido
                         </button>
-
                         <button onclick="abrirMotivoDevolucao()" class="w-full px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2 btn-status">
-                            <i class="fas fa-undo"></i> Devolver (com motivo)
+                            <i class="fas fa-arrow-left"></i> Devolver (com motivo)
                         </button>
-
                         <button onclick="abrirMotivoCancelamento()" class="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold flex items-center justify-center gap-2 btn-status">
                             <i class="fas fa-ban"></i> Cancelar (com motivo)
                         </button>
@@ -273,13 +274,11 @@
     </div>
 
     <script>
-        if ('caches' in window) { caches.keys().then(names => names.forEach(name => caches.delete(name))); }
-        
+        // CONFIG API
         const API_URL = "https://script.google.com/macros/s/AKfycbwxfrN3AmulqSm2UvwZq45gbrFwTGM5qnufmov1OV_HtjBwg0UTjL_Xc3PwBA-u6-BZ/exec";
         let usuarioAtual = null;
         let protocoloAtual = null;
         let todosBairros = [];
-        let protocolosMestre = []; // Armazena todos os protocolos recebidos para uso na impressão e exportação
 
         window.addEventListener('load', () => {
             const user = localStorage.getItem('user');
@@ -302,7 +301,10 @@
             const pass = document.getElementById('pass').value.trim();
             const btn = document.getElementById('btnLogin');
             
-            if (!user || !pass) return alert('Por favor, preencha usuário e senha.');
+            if (!user || !pass) {
+                alert('Por favor, preencha usuário e senha.');
+                return;
+            }
             
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Validando...';
@@ -325,10 +327,11 @@
                     carregarProtocolos();
                 } else {
                     alert('Erro: Acesso apenas para usuários EMPRESA.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
                 }
             } catch (err) {
                 alert(`Erro ao conectar com o servidor.`);
-            } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
             }
@@ -385,17 +388,9 @@
                 const result = await response.json();
                 
                 if (result.success && result.data && result.data.length > 0) {
-                    // FILTRO DE STATUS: Garante que apenas protocolos aptos apareçam na listagem da empresa.
-                    // Aqueles que mudarem para 'RESOLVIDO' etc., desaparecerão na atualização automática.
-                    const statusValidos = ['ENCAMINHADO AO FUNCIONÁRIO', 'COM FUNCIONÁRIO', 'COM A EMPRESA'];
-                    protocolosMestre = result.data.filter(p => {
-                        const status = (p.STATUS || '').toUpperCase().trim();
-                        return statusValidos.includes(status);
-                    });
-                    exibirProtocolos(protocolosMestre);
+                    exibirProtocolos(result.data);
                 } else {
-                    protocolosMestre = [];
-                    exibirMensagem('Nenhum protocolo disponível no momento.');
+                    exibirMensagem(result.error || 'Nenhum protocolo disponível no momento.');
                     document.getElementById('protocolosContainer').innerHTML = '';
                     document.getElementById('totalProtocolos').textContent = '0';
                 }
@@ -409,48 +404,58 @@
             const filtroProtocolo = document.getElementById('filtroProtocolo').value.toLowerCase();
             const filtroBairro = document.getElementById('filtroBairro').value;
 
+            // Filtro rígido para garantir que SÓ protocolos de campo apareçam na página da empresa
             const protocolosFiltrados = protocolos.filter(p => {
-                const protocolo = (p.PROTOCOLO || '').toLowerCase();
+                const protocoloStr = (p.PROTOCOLO || '').toLowerCase();
                 const bairro = (p.BAIRRO || '');
-                return (!filtroProtocolo || protocolo.includes(filtroProtocolo)) && (!filtroBairro || bairro === filtroBairro);
+                const status = (p.STATUS || '').toUpperCase().trim();
+                
+                // Só mostra se for ENCAMINHADO AO FUNCIONÁRIO ou COM FUNCIONÁRIO
+                const statusPermitido = status === "ENCAMINHADO AO FUNCIONÁRIO" || status === "COM FUNCIONÁRIO";
+                const passaFiltroProtocolo = !filtroProtocolo || protocoloStr.includes(filtroProtocolo);
+                const passaFiltroBairro = !filtroBairro || bairro === filtroBairro;
+                
+                return statusPermitido && passaFiltroProtocolo && passaFiltroBairro;
             });
 
+            document.getElementById('totalProtocolos').textContent = protocolosFiltrados.length;
+            document.getElementById('selectAll').checked = false;
+
             if (protocolosFiltrados.length === 0) {
-                container.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-12"><i class="fas fa-inbox text-4xl mb-3 block"></i>Nenhum protocolo encontrado</td></tr>';
-                document.getElementById('totalProtocolos').textContent = '0';
+                container.innerHTML = '<div class="text-center text-slate-400 py-12"><i class="fas fa-inbox text-4xl mb-3"></i><p>Nenhum protocolo a ser executado no momento.</p></div>';
                 return;
             }
 
-            document.getElementById('totalProtocolos').textContent = protocolosFiltrados.length;
-            
-            // Layout atualizado para Tabela, mantendo colunas solicitadas e botões em linha (nowrap)
-            container.innerHTML = protocolosFiltrados.map(p => `
-                <tr class="hover:bg-slate-700/50 transition">
-                    <td class="p-4 text-center">
-                        <input type="checkbox" value="${p.PROTOCOLO}" class="protocol-checkbox w-4 h-4 rounded accent-orange-600 cursor-pointer">
-                    </td>
-                    <td class="p-4 text-slate-300 font-medium">${p.DATA || 'N/A'}</td>
-                    <td class="p-4 font-bold text-orange-400">${p.PROTOCOLO || 'N/A'}</td>
-                    <td class="p-4 text-slate-300">${p.SOLICITANTE || 'N/A'}</td>
-                    <td class="p-4 text-slate-300 truncate max-w-xs" title="${p['ENDEREÇO DO PROBLEMA'] || 'N/A'}">${p['ENDEREÇO DO PROBLEMA'] || 'N/A'}</td>
-                    <td class="p-4 text-slate-300">${p.BAIRRO || 'N/A'}</td>
-                    <td class="p-4">
-                        <div class="flex items-center justify-center gap-2 whitespace-nowrap">
-                            <button onclick='abrirDetalhes(${JSON.stringify(p).replace(/'/g, "&apos;")})' title="Detalhes" class="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 transition text-white">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button onclick="selecionarParaStatus('RESOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Marcar como Resolvido" class="px-3 py-2 rounded-md bg-green-600 hover:bg-green-500 transition text-white">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <button onclick="selecionarParaStatus('DEVOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Devolver Protocolo" class="px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-500 transition text-white">
-                                <i class="fas fa-undo"></i>
-                            </button>
-                            <button onclick="selecionarParaStatus('CANCELADO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Cancelar Protocolo" class="px-3 py-2 rounded-md bg-red-600 hover:bg-red-500 transition text-white">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+            // Renderização da tabela para aproveitar todo o espaço - Botões horizontais
+            container.innerHTML = protocolosFiltrados.map((p, idx) => `
+                <div class="protocol-row bg-slate-800 border border-slate-700 rounded-lg p-3 lg:grid lg:grid-row gap-3 items-center hover:bg-slate-750 transition flex flex-col">
+                    
+                    <div class="flex items-center w-full lg:w-auto">
+                        <input type="checkbox" class="protocol-checkbox w-4 h-4 rounded accent-orange-600 cursor-pointer" data-index="${idx}">
+                        <span class="lg:hidden ml-2 font-bold text-slate-400 text-sm">Selecionar Ordem</span>
+                    </div>
+                    
+                    <div class="text-sm text-slate-300 w-full lg:w-auto flex justify-between lg:block"><span class="lg:hidden font-semibold">Data:</span> <span>${p.DATA || 'N/A'}</span></div>
+                    
+                    <div class="w-full lg:w-auto flex justify-between lg:block"><span class="lg:hidden font-semibold text-slate-400">Protocolo:</span> <span class="text-sm font-bold text-orange-400">${p.PROTOCOLO || 'N/A'}</span></div>
+                    
+                    <div class="w-full lg:w-auto flex flex-col lg:block"><span class="lg:hidden font-semibold text-slate-400 text-xs mb-1">Solicitante:</span> <span class="text-sm text-slate-300 truncate block" title="${p.SOLICITANTE || 'N/A'}">${p.SOLICITANTE || 'N/A'}</span></div>
+                    
+                    <div class="w-full lg:w-auto flex flex-col lg:block"><span class="lg:hidden font-semibold text-slate-400 text-xs mb-1">Endereço:</span> <span class="text-sm text-slate-300 truncate block" title="${p['ENDEREÇO DO PROBLEMA'] || 'N/A'}">${p['ENDEREÇO DO PROBLEMA'] || 'N/A'}</span></div>
+                    
+                    <div class="w-full lg:w-auto flex justify-between lg:block"><span class="lg:hidden font-semibold text-slate-400">Bairro:</span> <span class="text-sm text-slate-300 truncate block" title="${p.BAIRRO || 'N/A'}">${p.BAIRRO || 'N/A'}</span></div>
+                    
+                    <!-- Botões de Ação Horizontais e sem quebra -->
+                    <div class="action-buttons flex gap-2 w-full lg:w-auto justify-center">
+                        <button onclick='abrirDetalhes(${JSON.stringify(p).replace(/'/g, "&apos;")})' title="Ver Detalhes" class="flex-1 lg:flex-none px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 transition text-white text-sm"><i class="fas fa-eye"></i></button>
+                        <button onclick="selecionarParaStatus('RESOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Baixa: Resolvido" class="flex-1 lg:flex-none px-3 py-2 rounded bg-green-600 hover:bg-green-700 transition text-white text-sm"><i class="fas fa-check"></i></button>
+                        <button onclick="selecionarParaStatus('DEVOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Devolver ao Setor" class="flex-1 lg:flex-none px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 transition text-white text-sm"><i class="fas fa-arrow-left"></i></button>
+                        <button onclick="selecionarParaStatus('CANCELADO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Cancelar Protocolo" class="flex-1 lg:flex-none px-3 py-2 rounded bg-red-600 hover:bg-red-700 transition text-white text-sm"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <!-- Div invisível que guarda TODOS os dados para a Impressão em campo -->
+                    <div class="hidden data-full-info" data-json='${JSON.stringify(p).replace(/'/g, "&apos;")}'></div>
+                </div>
             `).join('');
 
             ocultarMensagem();
@@ -463,7 +468,7 @@
 
         function abrirDetalhes(protocolo) {
             protocoloAtual = protocolo;
-            document.getElementById('modal_protocolo').textContent = protocolo.PROTOCOLO || 'N/A';
+            document.getElementById('modal_protocolo').textContent = protocolo.PROTOCOLO;
             document.getElementById('modal_status').textContent = protocolo.STATUS || 'N/A';
             document.getElementById('modal_data').textContent = protocolo.DATA || 'N/A';
             document.getElementById('modal_solicitante').textContent = protocolo.SOLICITANTE || 'N/A';
@@ -471,7 +476,7 @@
             document.getElementById('modal_bairro').textContent = protocolo.BAIRRO || 'N/A';
             document.getElementById('modal_referencia').textContent = protocolo['PONTO DE REFERÊNCIA'] || 'N/A';
             document.getElementById('modal_cpf').textContent = protocolo['CPF DO SOLICITANTE'] || 'N/A';
-            document.getElementById('modal_tipo_servico').textContent = protocolo.SOLICITAÇÃO || 'N/A';
+            document.getElementById('modal_tipo_servico').textContent = protocolo.SOLICITAÇÃO || protocolo.TIPO_SERVICO || 'N/A';
             document.getElementById('modal_detalhes').textContent = protocolo['DETALHES DO SERVIÇO'] || 'Nenhum detalhe adicional';
             document.getElementById('modal_observacoes').textContent = protocolo.OBSERVAÇÃO || 'Nenhuma observação';
             
@@ -503,28 +508,33 @@
             if (novoStatus === 'DEVOLVIDO') {
                 const motivo = document.getElementById('motivoDevolucao').value.trim();
                 if (!motivo) return alert('Por favor, descreva o motivo da devolução.');
+                statusFinal = 'DEVOLVIDO';
             } else if (novoStatus === 'CANCELADO') {
                 const motivo = document.getElementById('motivoCancelamento').value.trim();
                 if (!motivo) return alert('Por favor, descreva o motivo do cancelamento.');
+                statusFinal = 'CANCELADO';
             }
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'updateStatus', tab: 'COM FUNCIONÁRIO', protocolId: protocoloAtual.PROTOCOLO, newStatus: statusFinal, username: usuarioAtual, role: localStorage.getItem('role') })
+                    body: JSON.stringify({
+                        action: 'updateStatus',
+                        tab: 'COM FUNCIONÁRIO',
+                        protocolId: protocoloAtual.PROTOCOLO,
+                        newStatus: statusFinal,
+                        username: usuarioAtual,
+                        role: localStorage.getItem('role')
+                    })
                 });
 
                 const result = await response.json();
                 if (result.success) {
                     fecharModal(); fecharMotivoDevolucao(); fecharMotivoCancelamento();
-                    exibirMensagem(`✅ Protocolo atualizado. Sincronizando...`);
-                    carregarProtocolos(); // Remove o item da lista ao atualizar (graças ao filtro)
-                } else {
-                    alert('Erro: ' + result.error);
-                }
-            } catch (err) {
-                alert('Erro ao conectar com o servidor.');
-            }
+                    exibirMensagem(`✅ Protocolo retirado da fila (${statusFinal}).`);
+                    setTimeout(() => carregarProtocolos(), 800); // Atualiza para remover da tela
+                } else alert('Erro: ' + result.error);
+            } catch (err) { alert('Erro ao conectar com o servidor.'); }
         }
 
         function exibirMensagem(texto) {
@@ -534,93 +544,102 @@
         }
         function ocultarMensagem() { document.getElementById('mensagem').classList.add('hidden'); }
 
-        // ==========================================
-        // LÓGICA DE IMPRESSÃO/PDF OTIMIZADA PARA O CAMPO
-        // ==========================================
-        function gerarTemplateImpressao() {
-            const selecionadosIds = Array.from(document.querySelectorAll('.protocol-checkbox:checked')).map(cb => cb.value);
-            if (selecionadosIds.length === 0) {
-                alert('Selecione ao menos um protocolo para imprimir/exportar.');
-                return null;
-            }
+        // ============================================================
+        // SISTEMA DE IMPRESSÃO / EXPORTAÇÃO PARA CAMPO
+        // Geração de PDF e Impressão unificados em blocos bem formatados
+        // ============================================================
+        function imprimirFormatado() {
+            const selecionados = document.querySelectorAll('.protocol-checkbox:checked');
+            if (selecionados.length === 0) return alert('Selecione ao menos um protocolo para exportar/imprimir.');
             
-            // Filtra os objetos completos da lista mestre (Garante acesso a telefone, detalhes, etc)
-            const dadosParaImprimir = protocolosMestre.filter(p => selecionadosIds.includes(p.PROTOCOLO));
+            let html = `
+            <html><head>
+                <meta charset="UTF-8">
+                <title>Ordens de Serviço - SERIPM 2026</title>
+                <style>
+                    body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; background: white; color: #111; }
+                    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
+                    .header-logo { width: 80px; height: 80px; }
+                    .header-center { flex: 1; text-align: center; }
+                    .header-center h2 { margin: 0; font-size: 16px; font-weight: bold; }
+                    .header-center p { margin: 2px 0; font-size: 12px; }
+                    .protocol-box { border: 2px solid #333; margin-bottom: 20px; padding: 15px; border-radius: 8px; page-break-inside: avoid; background-color: #fcfcfc; }
+                    .protocol-title { font-weight: bold; font-size: 16px; border-bottom: 2px solid #ccc; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; background-color: #eee; padding: 10px; border-radius: 4px;}
+                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; line-height: 1.4; }
+                    .full-width { grid-column: span 2; }
+                    .info-label { font-weight: bold; color: #444; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; }
+                    .info-value { font-size: 14px; font-weight: 500; }
+                    .signature-box { margin-top: 15px; border-top: 1px dashed #999; padding-top: 10px; display: flex; justify-content: space-between; font-size: 11px; }
+                    @media print { body { padding: 0; } }
+                </style>
+            </head><body>`;
             
-            let html = '<html><head><meta charset="UTF-8"><title>Fichas de Execução - SERIPM</title><style>';
-            html += 'body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; background: #f0f0f0; }';
-            html += '.print-card { background: white; border: 2px solid #333; border-radius: 8px; padding: 20px; margin-bottom: 20px; page-break-inside: avoid; }';
-            html += '.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }';
-            html += '.header h2 { margin: 0; font-size: 18px; color: #1e293b; text-transform: uppercase; }';
-            html += '.header .protocolo-badge { background: #1e293b; color: white; padding: 5px 15px; font-size: 16px; font-weight: bold; border-radius: 4px; }';
-            html += '.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }';
-            html += '.info-box { border: 1px solid #ccc; padding: 10px; border-radius: 4px; background: #fafafa; }';
-            html += '.info-box.full { grid-column: span 2; }';
-            html += '.info-box label { display: block; font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }';
-            html += '.info-box p { margin: 0; font-size: 14px; color: #000; font-weight: 500; }';
-            html += '.observacoes { min-height: 60px; }';
-            html += '.assinatura { margin-top: 30px; border-top: 1px dashed #999; padding-top: 10px; text-align: center; font-size: 12px; }';
-            html += '@media print { body { background: white; padding: 0; } .print-card { border: 1px solid #000; box-shadow: none; margin-bottom: 30px; } }';
-            html += '</style></head><body>';
+            // CABEÇALHO OFICIAL
+            html += `
+            <div class="header">
+                <div class="header-logo"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/brasao-marica.png" style="width: 100%; height: auto;" onerror="this.style.display='none'"></div>
+                <div class="header-center">
+                    <h2>ESTADO DO RIO DE JANEIRO</h2>
+                    <p>PREFEITURA MUNICIPAL DE MARICÁ</p>
+                    <p>SECRETARIA DE ENERGIAS RENOVÁVEIS E ILUMINAÇÃO PÚBLICA</p>
+                    <p><strong>ORDENS DE EXECUÇÃO DE SERVIÇO EM CAMPO</strong></p>
+                </div>
+                <div class="header-logo"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/sec.energ.renov.ilum.publica-marica.png" style="width: 100%; height: auto;" onerror="this.style.display='none'"></div>
+            </div>`;
             
-            html += '<div style="text-align: center; margin-bottom: 20px;">';
-            html += '<h1 style="margin:0; font-size: 20px;">SERIPM - FICHAS DE SERVIÇO DE CAMPO</h1>';
-            html += '<p style="margin:5px 0 0 0; font-size: 12px;">Gerado em: ' + new Date().toLocaleString('pt-BR') + ' | Total: ' + dadosParaImprimir.length + '</p>';
-            html += '</div>';
-            
-            dadosParaImprimir.forEach(p => {
-                html += '<div class="print-card">';
+            // ITERAÇÃO NOS PROTOCOLOS SELECIONADOS
+            selecionados.forEach(checkbox => {
+                const row = checkbox.closest('.protocol-row');
+                const jsonStr = row.querySelector('.data-full-info').getAttribute('data-json');
+                const p = JSON.parse(jsonStr);
+
+                // Campos bloqueados/ignorados que não devem ir pro campo
+                const ignoredKeys = ['ATENDENTE', 'DATA_MODIFICACAO', 'DATA_MODIFICAÇÃO', 'MODIFICADO_POR', 'STATUS', 'DATA', 'PROTOCOLO', 'SOLICITANTE', 'TELEFONE DO SOLICITANTE', 'ENDEREÇO DO PROBLEMA', 'BAIRRO', 'PONTO DE REFERÊNCIA', 'SOLICITAÇÃO', 'TIPO_SERVICO'];
+
+                html += `<div class="protocol-box">`;
+                html += `<div class="protocol-title">
+                            <span>OS: ${p.PROTOCOLO || 'N/A'}</span> 
+                            <span>Criado em: ${p.DATA || 'N/A'}</span>
+                         </div>`;
                 
-                html += '<div class="header">';
-                html += '<h2>Ficha de Serviço</h2>';
-                html += '<div class="protocolo-badge">#' + (p.PROTOCOLO || 'N/A') + '</div>';
-                html += '</div>';
+                html += `<div class="info-grid">`;
+                html += `<div><span class="info-label">Solicitante</span><span class="info-value">${p.SOLICITANTE || 'N/A'}</span></div>`;
+                html += `<div><span class="info-label">Contato Telefónico</span><span class="info-value">${p['TELEFONE DO SOLICITANTE'] || p.TELEFONE || 'Não informado'}</span></div>`;
+                html += `<div class="full-width"><span class="info-label">Local da Ocorrência</span><span class="info-value">${p['ENDEREÇO DO PROBLEMA'] || p.ENDEREÇO || 'N/A'}</span></div>`;
+                html += `<div><span class="info-label">Bairro</span><span class="info-value">${p.BAIRRO || 'N/A'}</span></div>`;
+                html += `<div><span class="info-label">Ponto de Referência</span><span class="info-value">${p['PONTO DE REFERÊNCIA'] || p.REFERENCIA || 'N/A'}</span></div>`;
+                html += `<div class="full-width"><span class="info-label">Serviço/Reclamação a Executar</span><span class="info-value">${p['SOLICITAÇÃO'] || p['TIPO_SERVICO'] || 'N/A'}</span></div>`;
+
+                // Imprimir quaisquer campos extras de detalhes que a tabela possa ter (evitando os administrativos)
+                for (let key in p) {
+                    if (p[key] && !ignoredKeys.includes(key.toUpperCase().trim())) {
+                        html += `<div class="full-width"><span class="info-label">${key}</span><span class="info-value">${p[key]}</span></div>`;
+                    }
+                }
+
+                html += `</div>`; // Fim info-grid
+
+                // Área para anotação em campo da equipe de execução
+                html += `<div class="signature-box">
+                            <div>Data da Execução: ____/____/202__</div>
+                            <div>Horário: ____:____ às ____:____</div>
+                            <div>Visto do Executor: _____________________________</div>
+                         </div>`;
                 
-                html += '<div class="info-grid">';
-                
-                html += '<div class="info-box"><label>Data da Abertura</label><p>' + (p.DATA || 'N/A') + '</p></div>';
-                html += '<div class="info-box"><label>Serviço / Solicitação</label><p>' + (p.SOLICITAÇÃO || 'N/A') + '</p></div>';
-                
-                html += '<div class="info-box"><label>Solicitante</label><p>' + (p.SOLICITANTE || 'N/A') + '</p></div>';
-                html += '<div class="info-box"><label>Telefone de Contato</label><p>' + (p['TELEFONE DO SOLICITANTE'] || 'N/A') + '</p></div>';
-                
-                html += '<div class="info-box full"><label>Endereço do Problema</label><p>' + (p['ENDEREÇO DO PROBLEMA'] || 'N/A') + '</p></div>';
-                
-                html += '<div class="info-box"><label>Bairro</label><p>' + (p.BAIRRO || 'N/A') + '</p></div>';
-                html += '<div class="info-box"><label>Ponto de Referência</label><p>' + (p['PONTO DE REFERÊNCIA'] || 'N/A') + '</p></div>';
-                
-                html += '<div class="info-box full observacoes"><label>Detalhes Adicionais do Serviço</label><p>' + (p['DETALHES DO SERVIÇO'] || 'Nenhum detalhe') + '</p></div>';
-                html += '<div class="info-box full observacoes"><label>Observações</label><p>' + (p.OBSERVAÇÃO || 'Nenhuma observação') + '</p></div>';
-                
-                html += '</div>'; // End info-grid
-                
-                html += '<div class="assinatura">';
-                html += 'Declaramos que o serviço referente a este protocolo foi analisado/executado.<br><br><br>';
-                html += '_____________________________________________________<br>Assinatura / Matrícula do Responsável';
-                html += '</div>';
-                
-                html += '</div>'; // End print-card
+                html += `</div>`; // Fim protocol-box
             });
             
-            html += '</body></html>';
-            return html;
-        }
-
-        function imprimirProtocolos() {
-            const html = gerarTemplateImpressao();
-            if(!html) return;
-            const printWindow = window.open('', '', 'width=900,height=800');
+            html += `<p style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">Documento oficial exportado do SERIPM em: ${new Date().toLocaleString('pt-BR')}</p>`;
+            html += `</body></html>`;
+            
+            const printWindow = window.open('', '', 'width=900,height=700');
             printWindow.document.write(html);
             printWindow.document.close();
             printWindow.focus();
-            setTimeout(() => printWindow.print(), 500);
+            setTimeout(() => { printWindow.print(); }, 800);
         }
 
-        function gerarPDF() {
-            // Utiliza a mesma estrutura detalhada, pois o print permite "Salvar como PDF" de forma nativa e bem formatada.
-            imprimirProtocolos(); 
-        }
-
+        // LOGOUT
         function fazerLogout() {
             localStorage.removeItem('user');
             localStorage.removeItem('role');
@@ -629,6 +648,7 @@
             document.getElementById('pass').value = '';
         }
 
+        // EVENT LISTENERS
         document.getElementById('filtroProtocolo').addEventListener('keyup', carregarProtocolos);
         document.getElementById('filtroBairro').addEventListener('change', carregarProtocolos);
         document.getElementById('pass').addEventListener('keypress', (e) => { if (e.key === 'Enter') fazerLogin(); });
