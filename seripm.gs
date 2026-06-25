@@ -348,24 +348,71 @@ function getProtocols(p) {
     if (!allowed.includes(p.tab)) return responseJson({ success: false, error: "Acesso negado à aba " + p.tab });
   }
 
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(p.tab);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(p.tab);
+  let data = [];
+  let statusFiltro = null;
+  
+  // ✅ NOVO: Se não for OBRA, busca de ENTRADA filtrado por STATUS
+  if (p.tab !== "OBRA" && sheet) {
+    // Mapear nome da aba para STATUS a filtrar
+    const mapeamento = {
+      "ENTRADA": null, // Mostra todos
+      "ADMINISTRATIVO": "ADMINISTRATIVO",
+      "TELECOM": "TELECOM",
+      "GARANTIA": "GARANTIA",
+      "COM FUNCIONÁRIO": "COM EMPRESA",
+      "IMPLANTAÇÃO": "IMPLANTAÇÃO",
+      "SUPERVISOR": null // Mostra todos
+    };
+    
+    statusFiltro = mapeamento[p.tab] || null;
+    
+    // Se não é aba física ou precisa filtrar, busca de ENTRADA
+    if (statusFiltro !== null || p.tab !== "OBRA") {
+      const sheetEntrada = ss.getSheetByName("ENTRADA");
+      if (sheetEntrada) {
+        sheet = sheetEntrada;
+      }
+    }
+  }
+  
   if (!sheet) return responseJson({ success: false, error: "Aba não encontrada." });
   
-  const data = sheet.getDataRange().getValues();
+  data = sheet.getDataRange().getValues();
   if (data.length < 2) return responseJson({ success: true, data: [] });
 
   const headers = data[0];
   let results = [];
   const idxData = headers.indexOf("DATA");
+  const idxStatus = headers.indexOf("STATUS");
+  const idxAtendente = headers.indexOf("ATENDENTE");
 
   for (let i = 1; i < data.length; i++) {
-    // Filtro para ATENDIMENTO verem apenas os seus próprios registos
-    if (p.role === "ATENDIMENTO" && headers.includes("ATENDENTE")) {
-      const idxAtendente = headers.indexOf("ATENDENTE");
+    // ✅ Filtro 1: Se tem statusFiltro definido, só mostra esse status
+    if (statusFiltro !== null && idxStatus >= 0) {
+      const status = (data[i][idxStatus] || "").toString().toUpperCase().trim();
+      if (status !== statusFiltro) continue;
+    }
+    
+    // ✅ Filtro 2: ATENDIMENTO vê apenas seus próprios registos
+    if (p.role === "ATENDIMENTO" && idxAtendente >= 0) {
       if (data[i][idxAtendente].toString().toUpperCase() !== p.username.toString().toUpperCase()) continue;
     }
 
+    // Construir objeto com todos os dados
+    let obj = {};
+    headers.forEach((h, index) => {
+      let val = data[i][index];
+      // Formata datas corretamente
+      if (h === "DATA" && val instanceof Date) {
+        val = Utilities.formatDate(val, "GMT-3", "dd/MM/yyyy HH:mm:ss");
+      }
+      obj[h] = val;
+    });
+    results.push(obj);
   }
+  
   return responseJson({ success: true, data: results.reverse() });
 }
 
