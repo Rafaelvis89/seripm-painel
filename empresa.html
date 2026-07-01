@@ -18,16 +18,6 @@
         .modal-overlay { backdrop-filter: blur(4px); }
         .btn-status { transition: all 0.2s ease; }
         .btn-status:hover { transform: scale(1.05); }
-        
-        /* Otimizações da Tabela Responsiva */
-        .grid-header { grid-template-columns: 40px 90px 140px 1fr 1fr 150px 160px; }
-        .grid-row { grid-template-columns: 40px 90px 140px 1fr 1fr 150px 160px; }
-        
-        @media (max-width: 1024px) {
-            .grid-header { display: none; }
-            .grid-row { display: flex; flex-direction: column; gap: 8px; }
-            .action-buttons { justify-content: flex-start; margin-top: 10px; width: 100%; }
-        }
     </style>
 </head>
 <body class="text-gray-100">
@@ -36,10 +26,10 @@
     <header class="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Brasão" class="h-10 w-10 object-contain" onerror="this.src='https://via.placeholder.com/40'">
+                <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Brasão" class="h-10 w-10 object-contain">
                 <div>
                     <h1 class="text-xl font-bold text-white">Portal de Execução</h1>
-                    <p class="text-xs text-slate-400">SERIPM 2026</p>
+                    <p class="text-xs text-slate-400">SERIPM</p>
                 </div>
             </div>
             <button id="logoutBtn" onclick="fazerLogout()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-white text-sm font-semibold hidden">
@@ -52,11 +42,11 @@
     <div id="telaLogin" class="fixed inset-0 bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-8">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden bg-slate-700">
-                    <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Perfil" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
+                    <img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/perfilx.png" alt="Perfil" class="w-full h-full object-cover">
                 </div>
                 <h2 class="text-3xl font-bold text-white">Portal Empresa</h2>
-                <p class="text-slate-400 mt-2">SERIPM 2026</p>
+                <p class="text-slate-400 mt-2">SERIPM</p>
             </div>
             
             <div class="space-y-4">
@@ -82,7 +72,7 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <main id="dashboard" class="hidden max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+    <main id="dashboard" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- TOOLBAR: Filtros + Botões de Ação -->
         <div class="mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-wrap bg-slate-800 border border-slate-700 rounded-lg p-4">
             <div class="flex-1 min-w-[200px]">
@@ -96,10 +86,10 @@
             <button onclick="carregarProtocolos()" title="Atualizar lista" class="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
                 <i class="fas fa-redo"></i> Atualizar
             </button>
-            <button onclick="imprimirFormatado()" title="Exportar para PDF" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
+            <button onclick="gerarPDF()" title="Exportar para PDF" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
                 <i class="fas fa-file-pdf"></i> PDF
             </button>
-            <button onclick="imprimirFormatado()" title="Imprimir" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
+            <button onclick="imprimirProtocolos()" title="Imprimir" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
                 <i class="fas fa-print"></i> Imprimir
             </button>
             <div class="px-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-semibold flex items-center gap-2 whitespace-nowrap">
@@ -112,22 +102,27 @@
             <i class="fas fa-info-circle mr-2"></i> <span id="textoMensagem"></span>
         </div>
 
-        <!-- TABLE HEADER -->
-        <div class="hidden lg:grid grid-header gap-3 px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg mb-3 text-sm font-semibold text-slate-300 items-center">
-            <div class="text-center">
-                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="w-4 h-4 rounded accent-orange-600 cursor-pointer">
-            </div>
-            <div>Data</div>
-            <div>Protocolo</div>
-            <div>Solicitante</div>
-            <div>Endereço</div>
-            <div>Bairro</div>
-            <div class="text-center">Ações</div>
-        </div>
-
-        <!-- PROTOCOLS LIST -->
-        <div id="protocolosContainer" class="space-y-2">
-            <!-- Itens da lista gerados dinamicamente -->
+        <!-- PROTOCOLS TABLE -->
+        <div class="overflow-x-auto bg-slate-800 border border-slate-700 rounded-lg">
+            <table class="w-full text-xs">
+                <thead class="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 sticky top-0 z-10">
+                    <tr class="text-slate-300 font-semibold">
+                        <th class="px-2 py-2 text-center w-10">
+                            <input type="checkbox" id="selectAll" class="w-4 h-4 rounded accent-orange-600 cursor-pointer" 
+                                   onchange="toggleSelectAll(this)">
+                        </th>
+                        <th class="px-2 py-2 text-left">Data</th>
+                        <th class="px-2 py-2 text-left">Protocolo</th>
+                        <th class="px-2 py-2 text-left">Solicitante</th>
+                        <th class="px-2 py-2 text-left">Endereço</th>
+                        <th class="px-2 py-2 text-left">Bairro</th>
+                        <th class="px-2 py-2 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="protocolosContainer" class="divide-y divide-slate-700 text-xs">
+                    <!-- Itens da tabela gerados dinamicamente -->
+                </tbody>
+            </table>
         </div>
     </main>
 
@@ -218,12 +213,17 @@
                 <div class="border-t border-slate-700 pt-6">
                     <p class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-4">Alterar Status</p>
                     <div class="space-y-3">
+                        <!-- Resolvido -->
                         <button onclick="mudarStatus('RESOLVIDO')" class="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 transition text-white font-semibold flex items-center justify-center gap-2 btn-status">
                             <i class="fas fa-check-circle"></i> Marcar como Resolvido
                         </button>
+
+                        <!-- Devolver -->
                         <button onclick="abrirMotivoDevolucao()" class="w-full px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-semibold flex items-center justify-center gap-2 btn-status">
                             <i class="fas fa-arrow-left"></i> Devolver (com motivo)
                         </button>
+
+                        <!-- Cancelar -->
                         <button onclick="abrirMotivoCancelamento()" class="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white font-semibold flex items-center justify-center gap-2 btn-status">
                             <i class="fas fa-ban"></i> Cancelar (com motivo)
                         </button>
@@ -274,12 +274,20 @@
     </div>
 
     <script>
-        // CONFIG API
+        // 🔄 LIMPAR CACHE NO CARREGAMENTO
+        if ('caches' in window) {
+            caches.keys().then(names => names.forEach(name => caches.delete(name)));
+        }
+        console.clear();
+        console.log('%c🚀 PORTAL EMPRESA CARREGADO', 'font-size: 16px; color: #10b981; font-weight: bold');
+        
+        // CONFIG API - Usar a URL correta do Apps Script publicado
         const API_URL = "https://script.google.com/macros/s/AKfycbwxfrN3AmulqSm2UvwZq45gbrFwTGM5qnufmov1OV_HtjBwg0UTjL_Xc3PwBA-u6-BZ/exec";
         let usuarioAtual = null;
         let protocoloAtual = null;
         let todosBairros = [];
 
+        // INICIALIZAÇÃO
         window.addEventListener('load', () => {
             const user = localStorage.getItem('user');
             const role = localStorage.getItem('role');
@@ -293,9 +301,12 @@
             mostrarDashboard();
             carregarDadosDinamicos();
             carregarProtocolos();
+            
+            // Auto-atualizar a cada 30 segundos
             setInterval(carregarProtocolos, 30000);
         });
 
+        // FAZER LOGIN
         async function fazerLogin() {
             const user = document.getElementById('user').value.trim();
             const pass = document.getElementById('pass').value.trim();
@@ -312,31 +323,39 @@
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'login', username: user, password: pass })
+                    body: JSON.stringify({
+                        action: 'login',
+                        username: user,
+                        password: pass
+                    })
                 });
                 
                 const result = await response.json();
+                console.log('🔐 Resultado do login:', result);
                 
                 if (result.success && result.role === 'EMPRESA') {
                     localStorage.setItem('user', result.username);
                     localStorage.setItem('role', result.role);
                     localStorage.setItem('allowedTabs', result.allowedTabs || '');
                     usuarioAtual = result.username;
+                    console.log('✅ Login bem-sucedido. Abas permitidas:', result.allowedTabs);
                     mostrarDashboard();
                     carregarDadosDinamicos();
                     carregarProtocolos();
                 } else {
-                    alert('Erro: Acesso apenas para usuários EMPRESA.');
+                    alert('Erro: Acesso apenas para usuários EMPRESA. Resposta: ' + JSON.stringify(result));
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
                 }
             } catch (err) {
-                alert(`Erro ao conectar com o servidor.`);
+                console.error('Erro completo:', err);
+                alert(`Erro ao conectar com o servidor:\n${err.message}`);
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
             }
         }
 
+        // MOSTRAR/OCULTAR DASHBOARD
         function mostrarDashboard() {
             document.getElementById('telaLogin').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
@@ -349,20 +368,29 @@
             document.getElementById('logoutBtn').classList.add('hidden');
         }
 
+        // CARREGAR DADOS DINÂMICOS
         async function carregarDadosDinamicos() {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'getDynamicData', role: localStorage.getItem('role'), username: usuarioAtual })
+                    body: JSON.stringify({
+                        action: 'getDynamicData',
+                        role: localStorage.getItem('role'),
+                        username: usuarioAtual
+                    })
                 });
+                
                 const result = await response.json();
                 if (result.success) {
                     todosBairros = result.bairros || [];
                     preencherSelectBairro();
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error('Erro ao carregar dados dinâmicos:', err);
+            }
         }
 
+        // PREENCHER SELECT BAIRRO
         function preencherSelectBairro() {
             const select = document.getElementById('filtroBairro');
             select.innerHTML = '<option value="">📍 Todos os bairros</option>';
@@ -374,6 +402,7 @@
             });
         }
 
+        // CARREGAR PROTOCOLOS
         async function carregarProtocolos() {
             try {
                 const payload = {
@@ -384,99 +413,132 @@
                     allowedTabs: localStorage.getItem('allowedTabs') || ''
                 };
                 
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                console.log('📤 Enviando para API:', payload);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
                 const result = await response.json();
+                console.log('📥 Resposta da API:', result);
                 
                 if (result.success && result.data && result.data.length > 0) {
                     exibirProtocolos(result.data);
                 } else {
-                    exibirMensagem(result.error || 'Nenhum protocolo disponível no momento.');
+                    const msgErro = result.error || 'Nenhum protocolo disponível no momento.';
+                    console.warn('⚠️ Aviso:', msgErro);
+                    exibirMensagem(msgErro);
                     document.getElementById('protocolosContainer').innerHTML = '';
-                    document.getElementById('totalProtocolos').textContent = '0';
                 }
             } catch (err) {
-                exibirMensagem('Erro ao conectar com o servidor.');
+                console.error('❌ Erro ao carregar protocolos:', err);
+                exibirMensagem('Erro ao conectar com o servidor: ' + err.message);
             }
         }
 
+        // EXIBIR PROTOCOLOS
         function exibirProtocolos(protocolos) {
+            console.log('🔍 Protocolos recebidos:', protocolos.length, 'itens');
+            if (protocolos.length > 0) {
+                console.log('📊 COLUNAS DISPONÍVEIS:', Object.keys(protocolos[0]));
+            }
+            
             const container = document.getElementById('protocolosContainer');
             const filtroProtocolo = document.getElementById('filtroProtocolo').value.toLowerCase();
             const filtroBairro = document.getElementById('filtroBairro').value;
 
-            // Filtro rígido para garantir que SÓ protocolos de campo apareçam na página da empresa
+            // Filtrar protocolos
             const protocolosFiltrados = protocolos.filter(p => {
-                const protocoloStr = (p.PROTOCOLO || '').toLowerCase();
+                const protocolo = (p.PROTOCOLO || '').toLowerCase();
                 const bairro = (p.BAIRRO || '');
-                const status = (p.STATUS || '').toUpperCase().trim();
                 
-                // Só mostra se for ENCAMINHADO AO FUNCIONÁRIO ou COM FUNCIONÁRIO
-                const statusPermitido = status === "ENCAMINHADO AO FUNCIONÁRIO" || status === "COM FUNCIONÁRIO";
-                const passaFiltroProtocolo = !filtroProtocolo || protocoloStr.includes(filtroProtocolo);
+                const passaFiltroProtocolo = !filtroProtocolo || protocolo.includes(filtroProtocolo);
                 const passaFiltroBairro = !filtroBairro || bairro === filtroBairro;
                 
-                return statusPermitido && passaFiltroProtocolo && passaFiltroBairro;
+                return passaFiltroProtocolo && passaFiltroBairro;
             });
 
-            document.getElementById('totalProtocolos').textContent = protocolosFiltrados.length;
-            document.getElementById('selectAll').checked = false;
-
             if (protocolosFiltrados.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-400 py-12"><i class="fas fa-inbox text-4xl mb-3"></i><p>Nenhum protocolo a ser executado no momento.</p></div>';
+                container.innerHTML = `<tr class="text-center text-slate-400"><td colspan="7" class="px-4 py-12"><i class="fas fa-inbox text-3xl mb-2 block"></i>Nenhum protocolo encontrado</td></tr>`;
+                document.getElementById('totalProtocolos').textContent = '0';
                 return;
             }
 
-            // Renderização da tabela para aproveitar todo o espaço - Botões horizontais
-            container.innerHTML = protocolosFiltrados.map((p, idx) => `
-                <div class="protocol-row bg-slate-800 border border-slate-700 rounded-lg p-3 lg:grid lg:grid-row gap-3 items-center hover:bg-slate-750 transition flex flex-col">
-                    
-                    <div class="flex items-center w-full lg:w-auto">
-                        <input type="checkbox" class="protocol-checkbox w-4 h-4 rounded accent-orange-600 cursor-pointer" data-index="${idx}">
-                        <span class="lg:hidden ml-2 font-bold text-slate-400 text-sm">Selecionar Ordem</span>
-                    </div>
-                    
-                    <div class="text-sm text-slate-300 w-full lg:w-auto flex justify-between lg:block"><span class="lg:hidden font-semibold">Data:</span> <span>${p.DATA || 'N/A'}</span></div>
-                    
-                    <div class="w-full lg:w-auto flex justify-between lg:block"><span class="lg:hidden font-semibold text-slate-400">Protocolo:</span> <span class="text-sm font-bold text-orange-400">${p.PROTOCOLO || 'N/A'}</span></div>
-                    
-                    <div class="w-full lg:w-auto flex flex-col lg:block"><span class="lg:hidden font-semibold text-slate-400 text-xs mb-1">Solicitante:</span> <span class="text-sm text-slate-300 truncate block" title="${p.SOLICITANTE || 'N/A'}">${p.SOLICITANTE || 'N/A'}</span></div>
-                    
-                    <div class="w-full lg:w-auto flex flex-col lg:block"><span class="lg:hidden font-semibold text-slate-400 text-xs mb-1">Endereço:</span> <span class="text-sm text-slate-300 truncate block" title="${p['ENDEREÇO DO PROBLEMA'] || 'N/A'}">${p['ENDEREÇO DO PROBLEMA'] || 'N/A'}</span></div>
-                    
-                    <div class="w-full lg:w-auto flex justify-between lg:block"><span class="lg:hidden font-semibold text-slate-400">Bairro:</span> <span class="text-sm text-slate-300 truncate block" title="${p.BAIRRO || 'N/A'}">${p.BAIRRO || 'N/A'}</span></div>
-                    
-                    <!-- Botões de Ação Horizontais e sem quebra -->
-                    <div class="action-buttons flex gap-2 w-full lg:w-auto justify-center">
-                        <button onclick='abrirDetalhes(${JSON.stringify(p).replace(/'/g, "&apos;")})' title="Ver Detalhes" class="flex-1 lg:flex-none px-3 py-2 rounded bg-slate-700 hover:bg-slate-600 transition text-white text-sm"><i class="fas fa-eye"></i></button>
-                        <button onclick="selecionarParaStatus('RESOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Baixa: Resolvido" class="flex-1 lg:flex-none px-3 py-2 rounded bg-green-600 hover:bg-green-700 transition text-white text-sm"><i class="fas fa-check"></i></button>
-                        <button onclick="selecionarParaStatus('DEVOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Devolver ao Setor" class="flex-1 lg:flex-none px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 transition text-white text-sm"><i class="fas fa-arrow-left"></i></button>
-                        <button onclick="selecionarParaStatus('CANCELADO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Cancelar Protocolo" class="flex-1 lg:flex-none px-3 py-2 rounded bg-red-600 hover:bg-red-700 transition text-white text-sm"><i class="fas fa-times"></i></button>
-                    </div>
+            // Atualizar total de protocolos
+            document.getElementById('totalProtocolos').textContent = protocolosFiltrados.length;
 
-                    <!-- Div invisível que guarda TODOS os dados para a Impressão em campo -->
-                    <div class="hidden data-full-info" data-json='${JSON.stringify(p).replace(/'/g, "&apos;")}'></div>
-                </div>
+            // Renderizar tabela
+            container.innerHTML = protocolosFiltrados.map((p, idx) => `
+                <tr class="hover:bg-slate-700 transition text-slate-300 border-slate-700 h-8">
+                    <!-- CHECKBOX -->
+                    <td class="px-2 py-1 text-center">
+                        <input type="checkbox" class="protocol-checkbox w-4 h-4 rounded accent-orange-600 cursor-pointer" data-index="${idx}">
+                    </td>
+                    
+                    <!-- DATA -->
+                    <td class="px-2 py-1 text-xs whitespace-nowrap">
+                        ${p.DATA || 'N/A'}
+                    </td>
+                    
+                    <!-- PROTOCOLO -->
+                    <td class="px-2 py-1 text-xs font-bold text-orange-400">
+                        ${p.PROTOCOLO || 'N/A'}
+                    </td>
+                    
+                    <!-- SOLICITANTE -->
+                    <td class="px-2 py-1 text-xs truncate" title="${p.SOLICITANTE || 'N/A'}">
+                        ${p.SOLICITANTE || 'N/A'}
+                    </td>
+                    
+                    <!-- ENDEREÇO -->
+                    <td class="px-2 py-1 text-xs truncate" title="${p['ENDEREÇO DO PROBLEMA'] || p.ENDERECO || 'N/A'}">
+                        ${p['ENDEREÇO DO PROBLEMA'] || p.ENDERECO || 'N/A'}
+                    </td>
+                    
+                    <!-- BAIRRO -->
+                    <td class="px-2 py-1 text-xs">
+                        ${p.BAIRRO || 'N/A'}
+                    </td>
+
+                    <!-- AÇÕES -->
+                    <td class="px-2 py-1 text-center">
+                        <div class="flex gap-0.5 justify-center">
+                            <button onclick='abrirDetalhes(${JSON.stringify(p).replace(/'/g, "&apos;")})' title="Detalhes" class="px-1.5 py-0.5 rounded bg-slate-600 hover:bg-slate-500 transition text-white text-xs" aria-label="Abrir detalhes">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="mudarStatusRapido('RESOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Resolvido" class="px-1.5 py-0.5 rounded bg-green-600 hover:bg-green-700 transition text-white text-xs" aria-label="Marcar como resolvido">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button onclick="mudarStatusRapido('DEVOLVIDO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Devolver" class="px-1.5 py-0.5 rounded bg-blue-600 hover:bg-blue-700 transition text-white text-xs" aria-label="Devolver protocolo">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                            <button onclick="mudarStatusRapido('CANCELADO', ${JSON.stringify(p).replace(/'/g, "&apos;")})" title="Cancelar" class="px-1.5 py-0.5 rounded bg-red-600 hover:bg-red-700 transition text-white text-xs" aria-label="Cancelar protocolo">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
             `).join('');
 
             ocultarMensagem();
         }
 
-        function toggleSelectAll() {
-            const isChecked = document.getElementById('selectAll').checked;
-            document.querySelectorAll('.protocol-checkbox').forEach(cb => cb.checked = isChecked);
-        }
-
+        // ABRIR DETALHES
         function abrirDetalhes(protocolo) {
             protocoloAtual = protocolo;
+            console.log('🔓 Abrindo modal com protocolo:', protocolo.PROTOCOLO);
+            console.log('📋 Dados disponíveis:', Object.keys(protocolo));
+            
             document.getElementById('modal_protocolo').textContent = protocolo.PROTOCOLO;
-            document.getElementById('modal_status').textContent = protocolo.STATUS || 'N/A';
+            document.getElementById('modal_status').textContent = protocolo.STATUS || 'ABERTO';
             document.getElementById('modal_data').textContent = protocolo.DATA || 'N/A';
             document.getElementById('modal_solicitante').textContent = protocolo.SOLICITANTE || 'N/A';
             document.getElementById('modal_endereco').textContent = protocolo['ENDEREÇO DO PROBLEMA'] || 'N/A';
             document.getElementById('modal_bairro').textContent = protocolo.BAIRRO || 'N/A';
             document.getElementById('modal_referencia').textContent = protocolo['PONTO DE REFERÊNCIA'] || 'N/A';
             document.getElementById('modal_cpf').textContent = protocolo['CPF DO SOLICITANTE'] || 'N/A';
-            document.getElementById('modal_tipo_servico').textContent = protocolo.SOLICITAÇÃO || protocolo.TIPO_SERVICO || 'N/A';
+            document.getElementById('modal_tipo_servico').textContent = protocolo.SOLICITAÇÃO || 'N/A';
             document.getElementById('modal_detalhes').textContent = protocolo['DETALHES DO SERVIÇO'] || 'Nenhum detalhe adicional';
             document.getElementById('modal_observacoes').textContent = protocolo.OBSERVAÇÃO || 'Nenhuma observação';
             
@@ -486,32 +548,142 @@
             telLink.textContent = protocolo['TELEFONE DO SOLICITANTE'] || 'N/A';
             
             document.getElementById('modalDetalhes').classList.remove('hidden');
+            console.log('✅ Modal aberto com sucesso');
         }
 
-        function fecharModal() { document.getElementById('modalDetalhes').classList.add('hidden'); protocoloAtual = null; }
-        function abrirMotivoDevolucao() { document.getElementById('motivoDevolucao').value = ''; document.getElementById('modalMotivoDevolucao').classList.remove('hidden'); }
-        function fecharMotivoDevolucao() { document.getElementById('modalMotivoDevolucao').classList.add('hidden'); }
-        function abrirMotivoCancelamento() { document.getElementById('motivoCancelamento').value = ''; document.getElementById('modalMotivoCancelamento').classList.remove('hidden'); }
-        function fecharMotivoCancelamento() { document.getElementById('modalMotivoCancelamento').classList.add('hidden'); }
+        // FECHAR MODAL DETALHES
+        function fecharModal() {
+            document.getElementById('modalDetalhes').classList.add('hidden');
+            protocoloAtual = null;
+        }
 
+        // ABRIR MOTIVO DEVOLUÇÃO
+        function abrirMotivoDevolucao() {
+            document.getElementById('motivoDevolucao').value = '';
+            document.getElementById('modalMotivoDevolucao').classList.remove('hidden');
+        }
+
+        // FECHAR MOTIVO DEVOLUÇÃO
+        function fecharMotivoDevolucao() {
+            document.getElementById('modalMotivoDevolucao').classList.add('hidden');
+        }
+
+        // ABRIR MOTIVO CANCELAMENTO
+        function abrirMotivoCancelamento() {
+            document.getElementById('motivoCancelamento').value = '';
+            document.getElementById('modalMotivoCancelamento').classList.remove('hidden');
+        }
+
+        // FECHAR MOTIVO CANCELAMENTO
+        function fecharMotivoCancelamento() {
+            document.getElementById('modalMotivoCancelamento').classList.add('hidden');
+        }
+
+        // SELECIONAR/DESSELECIONAR TODOS
+        function toggleSelectAll(checkbox) {
+            document.querySelectorAll('.protocol-checkbox').forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+        }
+
+        // MUDAR STATUS RÁPIDO (direto da tabela - sem modal)
+        async function mudarStatusRapido(novoStatus, protocolo) {
+            protocoloAtual = protocolo;
+            
+            if (novoStatus === 'RESOLVIDO') {
+                // Resolvido sem confirmação
+                console.log('✅ Marcando como RESOLVIDO:', protocolo.PROTOCOLO);
+                await executarMudancaStatus('RESOLVIDO');
+            } else if (novoStatus === 'DEVOLVIDO') {
+                // Pedir motivo
+                const motivo = prompt('Motivo da devolução:');
+                if (!motivo) return;
+                await executarMudancaStatus('DEVOLVIDO', motivo);
+            } else if (novoStatus === 'CANCELADO') {
+                // Pedir motivo
+                const motivo = prompt('Motivo do cancelamento:');
+                if (!motivo) return;
+                await executarMudancaStatus('CANCELADO', motivo);
+            }
+        }
+
+        // EXECUTAR MUDANÇA DE STATUS
+        async function executarMudancaStatus(novoStatus, motivo = '') {
+            if (!protocoloAtual || !protocoloAtual.PROTOCOLO) {
+                alert('Erro: Protocolo não identificado');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateStatus',
+                        tab: 'ENTRADA',
+                        protocolId: protocoloAtual.PROTOCOLO,
+                        newStatus: novoStatus,
+                        username: usuarioAtual,
+                        role: localStorage.getItem('role')
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Status atualizado com sucesso:', novoStatus);
+                    alert('Protocolo ' + protocoloAtual.PROTOCOLO + ' alterado para ' + novoStatus);
+                    // Recarregar protocolos
+                    await carregarProtocolos();
+                } else {
+                    alert('Erro ao atualizar status: ' + (result.error || 'Desconhecido'));
+                    console.error('❌ Erro:', result.error);
+                }
+            } catch (err) {
+                alert('Erro de conexão: ' + err.message);
+                console.error('❌ Erro de conexão:', err);
+            }
+        }
+
+        // SELECIONAR PROTOCOLO PARA MUDANÇA DE STATUS
         function selecionarParaStatus(novoStatus, protocolo) {
             protocoloAtual = protocolo;
-            if (novoStatus === 'RESOLVIDO') mudarStatus('RESOLVIDO');
-            else if (novoStatus === 'DEVOLVIDO') abrirMotivoDevolucao();
-            else if (novoStatus === 'CANCELADO') abrirMotivoCancelamento();
+            console.log('🔄 Mudança de status para:', novoStatus, 'Protocolo:', protocolo.PROTOCOLO);
+            
+            if (novoStatus === 'RESOLVIDO') {
+                // Resolvido sem motivo, muda diretamente
+                console.log('✅ RESOLVIDO - sem modal');
+                mudarStatus('RESOLVIDO');
+            } else if (novoStatus === 'DEVOLVIDO') {
+                // Abre modal para digitar motivo
+                console.log('📋 Abrindo modal DEVOLUÇÃO');
+                document.getElementById('motivoDevolucao').value = '';
+                document.getElementById('modalMotivoDevolucao').classList.remove('hidden');
+            } else if (novoStatus === 'CANCELADO') {
+                // Abre modal para digitar motivo
+                console.log('📋 Abrindo modal CANCELAMENTO');
+                document.getElementById('motivoCancelamento').value = '';
+                document.getElementById('modalMotivoCancelamento').classList.remove('hidden');
+            }
         }
 
+        // MUDAR STATUS
         async function mudarStatus(novoStatus) {
             if (!protocoloAtual) return;
+
             let statusFinal = novoStatus;
 
             if (novoStatus === 'DEVOLVIDO') {
                 const motivo = document.getElementById('motivoDevolucao').value.trim();
-                if (!motivo) return alert('Por favor, descreva o motivo da devolução.');
+                if (!motivo) {
+                    alert('Por favor, descreva o motivo da devolução.');
+                    return;
+                }
                 statusFinal = 'DEVOLVIDO';
             } else if (novoStatus === 'CANCELADO') {
                 const motivo = document.getElementById('motivoCancelamento').value.trim();
-                if (!motivo) return alert('Por favor, descreva o motivo do cancelamento.');
+                if (!motivo) {
+                    alert('Por favor, descreva o motivo do cancelamento.');
+                    return;
+                }
                 statusFinal = 'CANCELADO';
             }
 
@@ -530,113 +702,189 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    fecharModal(); fecharMotivoDevolucao(); fecharMotivoCancelamento();
-                    exibirMensagem(`✅ Protocolo retirado da fila (${statusFinal}).`);
-                    setTimeout(() => carregarProtocolos(), 800); // Atualiza para remover da tela
-                } else alert('Erro: ' + result.error);
-            } catch (err) { alert('Erro ao conectar com o servidor.'); }
-        }
+                    // Fechar modais
+                    fecharModal();
+                    fecharMotivoDevolucao();
+                    fecharMotivoCancelamento();
 
-        function exibirMensagem(texto) {
-            document.getElementById('textoMensagem').textContent = texto;
-            document.getElementById('mensagem').classList.remove('hidden');
-            setTimeout(() => document.getElementById('mensagem').classList.add('hidden'), 4000);
-        }
-        function ocultarMensagem() { document.getElementById('mensagem').classList.add('hidden'); }
+                    // Mostrar mensagem de sucesso
+                    exibirMensagem(`✅ Protocolo marcado como ${statusFinal}. Atualizando...`);
 
-        // ============================================================
-        // SISTEMA DE IMPRESSÃO / EXPORTAÇÃO PARA CAMPO
-        // Geração de PDF e Impressão unificados em blocos bem formatados
-        // ============================================================
-        function imprimirFormatado() {
-            const selecionados = document.querySelectorAll('.protocol-checkbox:checked');
-            if (selecionados.length === 0) return alert('Selecione ao menos um protocolo para exportar/imprimir.');
-            
-            let html = `
-            <html><head>
-                <meta charset="UTF-8">
-                <title>Ordens de Serviço - SERIPM 2026</title>
-                <style>
-                    body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; background: white; color: #111; }
-                    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
-                    .header-logo { width: 80px; height: 80px; }
-                    .header-center { flex: 1; text-align: center; }
-                    .header-center h2 { margin: 0; font-size: 16px; font-weight: bold; }
-                    .header-center p { margin: 2px 0; font-size: 12px; }
-                    .protocol-box { border: 2px solid #333; margin-bottom: 20px; padding: 15px; border-radius: 8px; page-break-inside: avoid; background-color: #fcfcfc; }
-                    .protocol-title { font-weight: bold; font-size: 16px; border-bottom: 2px solid #ccc; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; background-color: #eee; padding: 10px; border-radius: 4px;}
-                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; line-height: 1.4; }
-                    .full-width { grid-column: span 2; }
-                    .info-label { font-weight: bold; color: #444; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; }
-                    .info-value { font-size: 14px; font-weight: 500; }
-                    .signature-box { margin-top: 15px; border-top: 1px dashed #999; padding-top: 10px; display: flex; justify-content: space-between; font-size: 11px; }
-                    @media print { body { padding: 0; } }
-                </style>
-            </head><body>`;
-            
-            // CABEÇALHO OFICIAL
-            html += `
-            <div class="header">
-                <div class="header-logo"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/brasao-marica.png" style="width: 100%; height: auto;" onerror="this.style.display='none'"></div>
-                <div class="header-center">
-                    <h2>ESTADO DO RIO DE JANEIRO</h2>
-                    <p>PREFEITURA MUNICIPAL DE MARICÁ</p>
-                    <p>SECRETARIA DE ENERGIAS RENOVÁVEIS E ILUMINAÇÃO PÚBLICA</p>
-                    <p><strong>ORDENS DE EXECUÇÃO DE SERVIÇO EM CAMPO</strong></p>
-                </div>
-                <div class="header-logo"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/sec.energ.renov.ilum.publica-marica.png" style="width: 100%; height: auto;" onerror="this.style.display='none'"></div>
-            </div>`;
-            
-            // ITERAÇÃO NOS PROTOCOLOS SELECIONADOS
-            selecionados.forEach(checkbox => {
-                const row = checkbox.closest('.protocol-row');
-                const jsonStr = row.querySelector('.data-full-info').getAttribute('data-json');
-                const p = JSON.parse(jsonStr);
-
-                // Campos bloqueados/ignorados que não devem ir pro campo
-                const ignoredKeys = ['ATENDENTE', 'DATA_MODIFICACAO', 'DATA_MODIFICAÇÃO', 'MODIFICADO_POR', 'STATUS', 'DATA', 'PROTOCOLO', 'SOLICITANTE', 'TELEFONE DO SOLICITANTE', 'ENDEREÇO DO PROBLEMA', 'BAIRRO', 'PONTO DE REFERÊNCIA', 'SOLICITAÇÃO', 'TIPO_SERVICO'];
-
-                html += `<div class="protocol-box">`;
-                html += `<div class="protocol-title">
-                            <span>OS: ${p.PROTOCOLO || 'N/A'}</span> 
-                            <span>Criado em: ${p.DATA || 'N/A'}</span>
-                         </div>`;
-                
-                html += `<div class="info-grid">`;
-                html += `<div><span class="info-label">Solicitante</span><span class="info-value">${p.SOLICITANTE || 'N/A'}</span></div>`;
-                html += `<div><span class="info-label">Contato Telefónico</span><span class="info-value">${p['TELEFONE DO SOLICITANTE'] || p.TELEFONE || 'Não informado'}</span></div>`;
-                html += `<div class="full-width"><span class="info-label">Local da Ocorrência</span><span class="info-value">${p['ENDEREÇO DO PROBLEMA'] || p.ENDEREÇO || 'N/A'}</span></div>`;
-                html += `<div><span class="info-label">Bairro</span><span class="info-value">${p.BAIRRO || 'N/A'}</span></div>`;
-                html += `<div><span class="info-label">Ponto de Referência</span><span class="info-value">${p['PONTO DE REFERÊNCIA'] || p.REFERENCIA || 'N/A'}</span></div>`;
-                html += `<div class="full-width"><span class="info-label">Serviço/Reclamação a Executar</span><span class="info-value">${p['SOLICITAÇÃO'] || p['TIPO_SERVICO'] || 'N/A'}</span></div>`;
-
-                // Imprimir quaisquer campos extras de detalhes que a tabela possa ter (evitando os administrativos)
-                for (let key in p) {
-                    if (p[key] && !ignoredKeys.includes(key.toUpperCase().trim())) {
-                        html += `<div class="full-width"><span class="info-label">${key}</span><span class="info-value">${p[key]}</span></div>`;
-                    }
+                    // Aguardar 1 segundo e recarregar
+                    setTimeout(() => {
+                        carregarProtocolos();
+                    }, 1000);
+                } else {
+                    alert('Erro: ' + result.error);
                 }
+            } catch (err) {
+                console.error('Erro ao atualizar status:', err);
+                alert('Erro ao conectar com o servidor.');
+            }
+        }
 
-                html += `</div>`; // Fim info-grid
+        // EXIBIR MENSAGEM
+        function exibirMensagem(texto) {
+            const msg = document.getElementById('mensagem');
+            const msgTexto = document.getElementById('textoMensagem');
+            msgTexto.textContent = texto;
+            msg.classList.remove('hidden');
+            setTimeout(() => ocultarMensagem(), 4000);
+        }
 
-                // Área para anotação em campo da equipe de execução
-                html += `<div class="signature-box">
-                            <div>Data da Execução: ____/____/202__</div>
-                            <div>Horário: ____:____ às ____:____</div>
-                            <div>Visto do Executor: _____________________________</div>
-                         </div>`;
-                
-                html += `</div>`; // Fim protocol-box
+        // OCULTAR MENSAGEM
+        function ocultarMensagem() {
+            document.getElementById('mensagem').classList.add('hidden');
+        }
+
+        // GERAR PDF
+        function gerarPDF() {
+            const selecionados = document.querySelectorAll('.protocol-checkbox:checked');
+            if (selecionados.length === 0) {
+                alert('Selecione ao menos um protocolo para exportar.');
+                return;
+            }
+            
+            let html = '<html><head><meta charset="UTF-8"><title>Protocolos - SERIP</title><style>';
+            html += 'body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; background: white; }';
+            html += '.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }';
+            html += '.header-logo { width: 80px; height: 80px; }';
+            html += '.header-center { flex: 1; text-align: center; }';
+            html += '.header-center h2 { margin: 0; font-size: 14px; font-weight: bold; }';
+            html += '.header-center p { margin: 2px 0; font-size: 12px; }';
+            html += '.header-right { width: 80px; height: 80px; }';
+            html += 'table { width: 100%; border-collapse: collapse; margin-top: 20px; }';
+            html += 'th, td { border: 1px solid #333; padding: 10px; text-align: left; font-size: 11px; }';
+            html += 'th { background-color: #f0f0f0; font-weight: bold; }';
+            html += 'tr:nth-child(even) { background-color: #f9f9f9; }';
+            html += '@media print { body { margin: 0; padding: 10px; } }';
+            html += '</style></head><body>';
+            
+            // CABEÇALHO
+            html += '<div class="header">';
+            html += '<div class="header-logo"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/brasao-marica.png" style="width: 100%; height: auto;"></div>';
+            html += '<div class="header-center">';
+            html += '<h2>ESTADO DO RIO DE JANEIRO</h2>';
+            html += '<p>PREFEITURA MUNICIPAL DE MARICÁ</p>';
+            html += '<p>SECRETARIA DE ENERGIAS RENOVÁVEIS E ILUMINAÇÃO PÚBLICA</p>';
+            html += '<p><strong>PÚBLICA - SERIP</strong></p>';
+            html += '</div>';
+            html += '<div class="header-right"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/sec.energ.renov.ilum.publica-marica.png" style="width: 100%; height: auto;"></div>';
+            html += '</div>';
+            
+            html += '<h3 style="text-align: center;">PROTOCOLOS PARA EXECUÇÃO</h3>';
+            html += '<table>';
+            html += '<tr><th>Data</th><th>Protocolo</th><th>Endereço</th><th>Bairro</th><th>Solicitante</th><th>Status</th></tr>';
+            
+            // Buscar todas as linhas da tabela com checkboxes marcadas
+            document.querySelectorAll('tbody tr').forEach((row) => {
+                const checkbox = row.querySelector('.protocol-checkbox');
+                if (checkbox && checkbox.checked) {
+                    const cells = row.querySelectorAll('td');
+                    const data = cells[1]?.textContent?.trim() || '';
+                    const protocolo = cells[2]?.textContent?.trim() || '';
+                    const solicitante = cells[3]?.textContent?.trim() || '';
+                    const endereco = cells[4]?.textContent?.trim() || '';
+                    const bairro = cells[5]?.textContent?.trim() || '';
+                    
+                    html += '<tr>';
+                    html += '<td>' + data + '</td>';
+                    html += '<td>' + protocolo + '</td>';
+                    html += '<td>' + endereco + '</td>';
+                    html += '<td>' + bairro + '</td>';
+                    html += '<td>' + solicitante + '</td>';
+                    html += '<td>COM A EMPRESA</td>';
+                    html += '</tr>';
+                }
             });
             
-            html += `<p style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">Documento oficial exportado do SERIPM em: ${new Date().toLocaleString('pt-BR')}</p>`;
-            html += `</body></html>`;
+            html += '</table>';
+            html += '<p style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">Documento gerado em: ' + new Date().toLocaleString('pt-BR') + '</p>';
+            html += '</body></html>';
             
-            const printWindow = window.open('', '', 'width=900,height=700');
+            const printWindow = window.open('', '', 'width=900,height=600');
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            // Salvar como PDF usando print
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+
+        // IMPRIMIR PROTOCOLOS
+        function imprimirProtocolos() {
+            const selecionados = document.querySelectorAll('.protocol-checkbox:checked');
+            if (selecionados.length === 0) {
+                alert('Selecione ao menos um protocolo para imprimir.');
+                return;
+            }
+            
+            let html = '<html><head><meta charset="UTF-8"><title>Protocolos - SERIP</title><style>';
+            html += 'body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; background: white; }';
+            html += '.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }';
+            html += '.header-logo { width: 80px; height: 80px; }';
+            html += '.header-center { flex: 1; text-align: center; }';
+            html += '.header-center h2 { margin: 0; font-size: 14px; font-weight: bold; }';
+            html += '.header-center p { margin: 2px 0; font-size: 12px; }';
+            html += '.header-right { width: 80px; height: 80px; }';
+            html += 'table { width: 100%; border-collapse: collapse; margin-top: 20px; }';
+            html += 'th, td { border: 1px solid #333; padding: 10px; text-align: left; font-size: 11px; }';
+            html += 'th { background-color: #f0f0f0; font-weight: bold; }';
+            html += 'tr:nth-child(even) { background-color: #f9f9f9; }';
+            html += '@media print { body { margin: 0; padding: 10px; } .no-print { display: none; } }';
+            html += '</style></head><body>';
+            
+            // CABEÇALHO
+            html += '<div class="header">';
+            html += '<div class="header-logo"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/brasao-marica.png" style="width: 100%; height: auto;"></div>';
+            html += '<div class="header-center">';
+            html += '<h2>ESTADO DO RIO DE JANEIRO</h2>';
+            html += '<p>PREFEITURA MUNICIPAL DE MARICÁ</p>';
+            html += '<p>SECRETARIA DE ENERGIAS RENOVÁVEIS E ILUMINAÇÃO PÚBLICA</p>';
+            html += '<p><strong>PÚBLICA - SERIP</strong></p>';
+            html += '</div>';
+            html += '<div class="header-right"><img src="https://secretariadenergiasrenovaveis-web.github.io/seripm-painel/images/sec.energ.renov.ilum.publica-marica.png" style="width: 100%; height: auto;"></div>';
+            html += '</div>';
+            
+            html += '<h3 style="text-align: center;">PROTOCOLOS PARA EXECUÇÃO</h3>';
+            html += '<table>';
+            html += '<tr><th>Data</th><th>Protocolo</th><th>Endereço</th><th>Bairro</th><th>Solicitante</th><th>Status</th></tr>';
+            
+            // Buscar todas as linhas da tabela com checkboxes marcadas
+            document.querySelectorAll('tbody tr').forEach((row) => {
+                const checkbox = row.querySelector('.protocol-checkbox');
+                if (checkbox && checkbox.checked) {
+                    const cells = row.querySelectorAll('td');
+                    const data = cells[1]?.textContent?.trim() || '';
+                    const protocolo = cells[2]?.textContent?.trim() || '';
+                    const solicitante = cells[3]?.textContent?.trim() || '';
+                    const endereco = cells[4]?.textContent?.trim() || '';
+                    const bairro = cells[5]?.textContent?.trim() || '';
+                    
+                    html += '<tr>';
+                    html += '<td>' + data + '</td>';
+                    html += '<td>' + protocolo + '</td>';
+                    html += '<td>' + endereco + '</td>';
+                    html += '<td>' + bairro + '</td>';
+                    html += '<td>' + solicitante + '</td>';
+                    html += '<td>COM A EMPRESA</td>';
+                    html += '</tr>';
+                }
+            });
+            
+            html += '</table>';
+            html += '<p style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">Documento gerado em: ' + new Date().toLocaleString('pt-BR') + '</p>';
+            html += '</body></html>';
+            
+            const printWindow = window.open('', '', 'width=900,height=600');
             printWindow.document.write(html);
             printWindow.document.close();
             printWindow.focus();
-            setTimeout(() => { printWindow.print(); }, 800);
+            
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
         }
 
         // LOGOUT
@@ -651,7 +899,12 @@
         // EVENT LISTENERS
         document.getElementById('filtroProtocolo').addEventListener('keyup', carregarProtocolos);
         document.getElementById('filtroBairro').addEventListener('change', carregarProtocolos);
-        document.getElementById('pass').addEventListener('keypress', (e) => { if (e.key === 'Enter') fazerLogin(); });
+
+        // ENTER para login
+        document.getElementById('pass').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fazerLogin();
+        });
     </script>
+
 </body>
 </html>
