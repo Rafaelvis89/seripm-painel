@@ -550,8 +550,8 @@
                     </td>
                     
                     <!-- DATA -->
-                    <td class="px-1 py-2 text-xs" title="${p.DATA || ''}">
-                        ${p.DATA || ''}
+                    <td class="px-1 py-2 text-xs" title="${p['DATA/HORA'] || ''}">
+                        ${p['DATA/HORA'] || ''}
                     </td>
                     
                     <!-- PROTOCOLO - UMA LINHA SÓ -->
@@ -655,7 +655,7 @@
             
             document.getElementById('modal_protocolo').textContent = protocolo.PROTOCOLO;
             document.getElementById('modal_status').textContent = protocolo.STATUS || 'ABERTO';
-            document.getElementById('modal_data').textContent = protocolo.DATA || 'N/A';
+            document.getElementById('modal_data').textContent = protocolo['DATA/HORA'] || 'N/A';
             document.getElementById('modal_solicitante').textContent = protocolo.SOLICITANTE || 'N/A';
             document.getElementById('modal_endereco').textContent = protocolo['ENDEREÇO DO PROBLEMA'] || 'N/A';
             document.getElementById('modal_bairro').textContent = protocolo.BAIRRO || 'N/A';
