@@ -89,10 +89,10 @@
         <!-- TOOLBAR: Filtros + Botões de Ação -->
         <div class="mb-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2 bg-slate-800 border border-slate-700 rounded-lg p-3">
             <!-- Filtro Protocolo -->
-            <input type="text" id="filtroProtocolo" placeholder="🔍 Protocolo" class="px-2 py-1.5 rounded text-xs bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition">
+            <input type="text" id="filtroProtocolo" placeholder="🔍 Protocolo" onchange="carregarProtocolos()" class="px-2 py-1.5 rounded text-xs bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition">
             
             <!-- Filtro Bairro -->
-            <select id="filtroBairro" class="px-2 py-1.5 rounded text-xs bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-orange-500 transition">
+            <select id="filtroBairro" onchange="carregarProtocolos()" class="px-2 py-1.5 rounded text-xs bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-orange-500 transition">
                 <option value="">📍 Bairros</option>
             </select>
             
@@ -549,27 +549,27 @@
                     </td>
                     
                     <!-- DATA -->
-                    <td class="px-1 py-2 text-xs overflow-hidden" title="${p.DATA || ''}">
+                    <td class="px-1 py-2 text-xs" title="${p.DATA || ''}">
                         ${p.DATA || ''}
                     </td>
                     
                     <!-- PROTOCOLO - UMA LINHA SÓ -->
-                    <td class="px-1 py-2 text-xs font-bold text-orange-400 overflow-hidden line-clamp-1" title="${p.PROTOCOLO || ''}">
+                    <td class="px-1 py-2 text-xs font-bold text-orange-400" title="${p.PROTOCOLO || ''}">
                         ${p.PROTOCOLO || ''}
                     </td>
                     
                     <!-- SOLICITANTE -->
-                    <td class="px-1 py-2 text-xs overflow-hidden" title="${p.SOLICITANTE || ''}">
+                    <td class="px-1 py-2 text-xs" title="${p.SOLICITANTE || ''}">
                         ${p.SOLICITANTE || ''}
                     </td>
                     
                     <!-- ENDEREÇO - QUEBRA NORMAL -->
-                    <td class="px-1 py-2 text-xs overflow-hidden" title="${p['ENDEREÇO DO PROBLEMA'] || p.ENDERECO || ''}">
+                    <td class="px-1 py-2 text-xs" title="${p['ENDEREÇO DO PROBLEMA'] || p.ENDERECO || ''}">
                         ${p['ENDEREÇO DO PROBLEMA'] || p.ENDERECO || ''}
                     </td>
                     
                     <!-- BAIRRO -->
-                    <td class="px-1 py-2 text-xs overflow-hidden" title="${p.BAIRRO || ''}">
+                    <td class="px-1 py-2 text-xs" title="${p.BAIRRO || ''}">
                         ${p.BAIRRO || ''}
                     </td>
 
